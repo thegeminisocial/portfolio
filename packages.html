@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packages | The Gemini Social</title>
+<meta name="description" content="What's inside each social media management package from The Gemini Social: Presence Social and Elevate Social.">
+<meta name="theme-color" content="#294268">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* Same colours and fonts as index.html. If you swap fonts there, swap them here too. */
+:root {
+  --cream: #F9F3ED;
+  --cream-2: #F1E6DA;
+  --white: #FFFFFF;
+  --navy: #294268;
+  --navy-2: #1F3452;
+  --navy-soft: #4A5F80;
+  --gold: #DF982E;
+  --gold-soft: #F4DDB6;
+  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --hand: "Caveat", "Segoe Script", cursive;
+  --radius-lg: 28px;
+  --shadow: 0 18px 40px -20px rgba(41, 66, 104, .35);
+  --shadow-soft: 0 6px 20px -10px rgba(41, 66, 104, .25);
+  --header-h: 72px;
+  --gutter: 24px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--cream); scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 16px); overflow-x: clip; }
+body { margin: 0; color: var(--navy); font-family: var(--sans); font-weight: 300; font-size: 1.0625rem; line-height: 1.7; overflow-x: clip; -webkit-font-smoothing: antialiased; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .09;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .26 0 0 0 0 .41 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; line-height: 1.05; margin: 0; letter-spacing: -.01em; }
+h1 em, h2 em { font-style: italic; }
+p { margin: 0 0 1em; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; border-radius: 6px; }
+.on-dark :focus-visible, .site-header :focus-visible { outline-color: var(--gold); }
+.skip-link { position: absolute; left: 16px; top: -60px; z-index: 200; background: var(--gold); color: var(--navy); padding: 10px 16px; border-radius: 10px; font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: 12px; }
+.wrap { width: 100%; max-width: 1100px; margin-inline: auto; padding-inline: var(--gutter); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 14px 26px; border-radius: 999px; border: 2px solid transparent; font-family: var(--sans); font-size: 1rem; font-weight: 600; line-height: 1.2; text-decoration: none; cursor: pointer; text-align: center; transition: transform .25s ease, background-color .25s ease, color .25s ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn-gold { background: var(--gold); color: var(--navy); box-shadow: 0 10px 24px -12px rgba(223, 152, 46, .9); }
+.btn-gold:hover { background: #E8A640; }
+.btn-gold:focus-visible { outline-color: var(--navy); }
+.btn-outline { border-color: var(--navy); color: var(--navy); }
+.btn-outline:hover { background: var(--navy); color: var(--cream); }
+.btn-outline-light { border-color: rgba(249, 243, 237, .7); color: var(--cream); }
+.btn-outline-light:hover { background: var(--cream); color: var(--navy); }
+
+/* Header */
+.site-header { position: fixed; inset: 0 0 auto 0; z-index: 100; height: var(--header-h); background: rgba(41, 66, 104, .97); color: var(--cream); }
+.nav { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.logo { font-family: var(--serif); font-size: 1.6rem; text-decoration: none; color: var(--cream); white-space: nowrap; }
+.logo em { font-style: italic; }
+.logo .star { color: var(--gold); font-size: .9rem; }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.nav-actions a { text-decoration: none; padding: 9px 16px; border-radius: 999px; font-size: .95rem; }
+.nav-actions .back:hover { background: rgba(249, 243, 237, .12); }
+.nav-actions .cta { background: var(--gold); color: var(--navy); font-weight: 600; }
+
+/* Intro */
+.intro { padding: calc(var(--header-h) + clamp(48px, 8vw, 96px)) 0 clamp(36px, 5vw, 56px); text-align: center; position: relative; }
+.eyebrow { font-family: var(--hand); font-size: 1.5rem; line-height: 1.2; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.eyebrow::before { content: "\2726"; color: var(--gold); font-size: 1rem; }
+.intro h1 { font-size: clamp(2.8rem, 7vw, 5rem); margin-bottom: 18px; }
+.intro p { max-width: 620px; margin: 0 auto 28px; color: var(--navy-soft); font-size: 1.1rem; }
+.jump { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.jump a { display: inline-flex; align-items: center; min-height: 46px; padding: 10px 20px; border-radius: 999px; border: 1.5px solid rgba(41, 66, 104, .35); text-decoration: none; font-weight: 500; transition: background-color .2s ease, color .2s ease; }
+.jump a:hover { background: var(--navy); color: var(--cream); border-color: var(--navy); }
+.constellation { position: absolute; width: min(240px, 40vw); right: 4%; top: calc(var(--header-h) + 20px); color: var(--gold); opacity: .4; pointer-events: none; }
+
+/* Package cards */
+.packages { display: grid; gap: clamp(24px, 4vw, 40px); padding-bottom: clamp(56px, 8vw, 96px); }
+.package { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(24px, 4vw, 56px); background: var(--white); border-radius: var(--radius-lg); padding: clamp(28px, 5vw, 56px); box-shadow: var(--shadow-soft); position: relative; overflow: hidden; }
+.package.dark { background: var(--navy); color: var(--cream); }
+.package-num { width: 52px; height: 52px; border-radius: 50%; background: var(--navy); color: var(--gold); display: grid; place-items: center; font-family: var(--serif); font-size: 1.4rem; margin-bottom: 18px; }
+.package.dark .package-num { background: var(--gold); color: var(--navy); }
+.package h2 { font-size: clamp(2.4rem, 5vw, 3.6rem); margin-bottom: 6px; }
+.package h2 em { font-style: italic; }
+.package .tagline { font-family: var(--hand); font-size: 1.5rem; line-height: 1.25; margin-bottom: 16px; }
+.package .who { color: var(--navy-soft); }
+.package.dark .who { color: #D9E0EA; }
+.package .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.inside-title { font-size: .82rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px; }
+.package.dark .inside-title { color: var(--gold); }
+.inside { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.inside li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; padding: 10px 0; border-bottom: 1px dashed rgba(41, 66, 104, .2); }
+.package.dark .inside li { border-bottom-color: rgba(249, 243, 237, .22); }
+.inside li:last-child { border-bottom: 0; }
+.inside li::before { content: ""; width: 16px; height: 16px; margin-top: 5px; background: var(--gold); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.package:not(.dark) .inside li::before { background: var(--navy); }
+.inside .more { font-family: var(--hand); font-size: 1.3rem; }
+
+/* Tailor note */
+.tailor { text-align: center; background: var(--cream-2); border-radius: var(--radius-lg); padding: clamp(32px, 5vw, 56px) clamp(20px, 4vw, 48px); margin-bottom: clamp(56px, 8vw, 96px); }
+.tailor h2 { font-size: clamp(2.2rem, 5vw, 3.2rem); margin-bottom: 12px; }
+.tailor p { max-width: 560px; margin: 0 auto 24px; color: var(--navy-soft); }
+.tailor .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+
+.site-footer { background: var(--navy-2); color: #D9E0EA; padding: 28px 0; font-size: .92rem; }
+.site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+.site-footer .hand { font-family: var(--hand); font-size: 1.3rem; color: var(--cream); }
+
+.js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s cubic-bezier(.2, .7, .2, 1); }
+.js .reveal.in { opacity: 1; transform: none; }
+
+/* Centred text */
+.package { text-align: center; }
+.package-num { margin-inline: auto; }
+.package .actions { justify-content: center; }
+.inside li { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.inside li::before { margin-top: 0; flex: none; }
+.inside li.more { justify-content: center; }
+.inside li.more::before { display: none; }
+.site-footer .wrap { justify-content: center; text-align: center; gap: 8px 28px; }
+
+@media (max-width: 860px) {
+  .package { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  :root { --gutter: 16px; --header-h: 64px; }
+  .logo { font-size: 1.35rem; }
+  .nav-actions .back span { display: none; }
+  .package .actions .btn, .tailor .actions .btn { width: 100%; }
+  .constellation { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="logo" href="index.html">The Gemini <em>Social</em> <span class="star" aria-hidden="true">&#10022;</span></a>
+    <div class="nav-actions">
+      <a class="back" href="index.html#services">&larr; <span>Back to home</span></a>
+      <a class="cta" href="#" data-link="call">Book a call</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="intro" aria-labelledby="page-title">
+    <svg class="constellation" viewBox="0 0 200 240" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+        <path d="M40 20 L55 70 L62 120 L58 170 L30 220 M58 170 L82 214 M20 92 L55 70 L130 80"/>
+        <path d="M120 30 L130 80 L140 128 L150 175 L126 225 M150 175 L178 218 M176 98 L130 80"/>
+      </g>
+      <g fill="currentColor">
+        <circle cx="40" cy="20" r="4.5"/><circle cx="120" cy="30" r="4.5"/><circle cx="55" cy="70" r="2.6"/><circle cx="62" cy="120" r="2.4"/>
+        <circle cx="58" cy="170" r="2.6"/><circle cx="30" cy="220" r="2.4"/><circle cx="82" cy="214" r="2.2"/><circle cx="20" cy="92" r="2.2"/>
+        <circle cx="130" cy="80" r="2.6"/><circle cx="140" cy="128" r="2.4"/><circle cx="150" cy="175" r="2.6"/><circle cx="126" cy="225" r="2.4"/>
+        <circle cx="178" cy="218" r="2.2"/><circle cx="176" cy="98" r="2.2"/>
+      </g>
+    </svg>
+    <div class="wrap">
+      <p class="eyebrow">Monthly packages</p>
+      <h1 id="page-title">What's inside each <em>package</em></h1>
+      <p>Every package is built around your business, your voice and your goals. Here's exactly what you get, so you can see which one feels right.</p>
+      <ul class="jump" id="jump"></ul>
+    </div>
+  </section>
+
+  <!-- Package cards are built from PACKAGES in the script below -->
+  <div class="wrap packages" id="packages"></div>
+
+  <div class="wrap">
+    <section class="tailor reveal" aria-labelledby="tailor-title">
+      <h2 id="tailor-title">Not sure which one <em>fits</em>?</h2>
+      <p>I'm always happy to tailor things to suit where your business is right now. Let's have a relaxed chat about your goals and work it out together.</p>
+      <div class="actions">
+        <a class="btn btn-gold" href="#" data-link="call">Book your free consultation &#10022;</a>
+        <a class="btn btn-outline" href="index.html#contact">Send me a message</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>&copy; <span id="year"></span> The Gemini Social</span>
+    <span class="hand">made with strategy + heart</span>
+  </div>
+</footer>
+
+<script>
+/* =====================================================================
+   EDIT YOUR PACKAGES HERE
+   id:      the link name used from the home page (index.html links to packages.html#id)
+   tagline: short handwritten line under the name
+   who:     who the package is for
+   inside:  everything included, one line each
+   ===================================================================== */
+const DISCOVERY_CALL = "https://calendar.app.google/nwmQoBqqzS6sE1ut8";   // same booking link as in index.html
+
+const PACKAGES = [
+  {
+    id: "presence-social",
+    name: "Presence <em>Social</em>",
+    plainName: "Presence Social",
+    tagline: "Your starting point for showing up with intention",
+    who: "For businesses that want a consistent, reliable presence online without the pressure of managing it alone. If you're ready to show up with intention and start building real momentum, this is your starting point.",
+    inside: [
+      "Instagram-led, with Facebook included",
+      "A unique strategy for your business and goals",
+      "Monthly content calendar ideas",
+      "Content curation and editing using your images and videos",
+      "2 posts per week",
+      "4 reels per month",
+      "Captions written in your brand's tone of voice",
+      "Monthly analytics report",
+      "60 minute monthly call"
+    ]
+  },
+  {
+    id: "elevate-social",
+    name: "Elevate <em>Social</em>",
+    plainName: "Elevate Social",
+    tagline: "For businesses ready to grow",
+    who: "If you want to reach new audiences on Instagram while building a loyal local community on Facebook, this is where that happens.",
+    inside: [
+      "Instagram and Facebook, each with their own strategy",
+      "Monthly content calendar ideas",
+      "Content curation and editing using your images and videos",
+      "3 posts per week",
+      "6 reels per month",
+      "1 Facebook-native post per month",
+      "Captions written in your brand's tone of voice",
+      "Monthly analytics report",
+      "60 minute monthly call"
+    ]
+  }
+];
+
+(function () {
+  "use strict";
+  document.documentElement.classList.add("js");
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  document.getElementById("jump").innerHTML = PACKAGES.map((p) =>
+    `<li><a href="#${p.id}">${esc(p.plainName)}</a></li>`).join("");
+
+  document.getElementById("packages").innerHTML = PACKAGES.map((p, i) => `
+    <article class="package reveal${i % 2 ? " dark on-dark" : ""}" id="${p.id}" aria-labelledby="${p.id}-title">
+      <div>
+        <span class="package-num" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>
+        <h2 id="${p.id}-title">${p.name}</h2>
+        <p class="tagline">${esc(p.tagline)}</p>
+        <p class="who">${esc(p.who)}</p>
+        <div class="actions">
+          <a class="btn btn-gold" href="#" data-link="call">Book a free consultation</a>
+          <a class="btn ${i % 2 ? "btn-outline-light" : "btn-outline"}" href="mailto:thegeminisocialco@gmail.com?subject=${encodeURIComponent("Question about " + p.plainName)}">Ask about ${esc(p.plainName)}</a>
+        </div>
+      </div>
+      <div>
+        <h3 class="inside-title">What's inside</h3>
+        <ul class="inside">
+          ${p.inside.map((item) => `<li>${esc(item)}</li>`).join("")}
+          <li class="more">and more...</li>
+        </ul>
+      </div>
+    </article>`).join("");
+
+  const call = DISCOVERY_CALL === "DISCOVERY_CALL_LINK" ? "index.html#contact" : DISCOVERY_CALL;
+  document.querySelectorAll('[data-link="call"]').forEach((a) => {
+    a.href = call;
+    if (/^https?:/.test(call)) { a.target = "_blank"; a.rel = "noopener"; }
+  });
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const items = document.querySelectorAll(".reveal");
+  if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    items.forEach((el) => el.classList.add("in"));
+  } else {
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }), { threshold: 0.1 });
+    items.forEach((el) => io.observe(el));
+  }
+})();
+</script>
+</body>
+</html>

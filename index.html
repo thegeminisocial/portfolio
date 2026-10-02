@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Gemini Social | Social Media Management by Marina Lira</title>
-<meta name="description" content="Personal social media management for small businesses on the Sunshine Coast and beyond. Strategy, content and genuine connection by Marina Lira, so your business stays visible while you do what you do best.">
+<meta name="description" content="Personal social media management for small businesses, wherever you are. Strategy, content and genuine connection by Marina Lira, so your business stays visible while you do what you do best.">
 <meta name="theme-color" content="#294268">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,19 +249,42 @@ section { position: relative; }
 }
 /* Phone with a mini Instagram grid */
 .obj-phone {
-  --r: -8deg; width: 104px; height: 196px; border-radius: 22px;
-  background: var(--navy); padding: 20px 8px 14px; box-shadow: var(--shadow);
+  --r: -9deg; width: 128px; height: 262px; border-radius: 30px; padding: 6px;
+  background: linear-gradient(145deg, #3A5682, var(--navy) 45%, #1B2C47);
+  box-shadow: var(--shadow), inset 0 0 0 1.5px rgba(255, 255, 255, .18);
   animation-duration: 10s;
 }
-.obj-phone::before { content: ""; position: absolute; top: 8px; left: 50%; width: 30px; height: 5px; margin-left: -15px; border-radius: 4px; background: rgba(249, 243, 237, .35); }
-.phone-screen { background: var(--cream); border-radius: 12px; height: 100%; padding: 8px 6px; }
-.phone-top { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; }
-.phone-top i { width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(var(--gold), var(--navy), var(--gold)); }
-.phone-top b { flex: 1; height: 4px; border-radius: 3px; background: rgba(41, 66, 104, .25); }
-.phone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-.phone-grid span { aspect-ratio: 1; border-radius: 2px; background: linear-gradient(150deg, var(--navy), #9DA9BC); }
-.phone-grid span:nth-child(3n+2) { background: linear-gradient(150deg, var(--gold), var(--gold-soft)); }
-.phone-grid span:nth-child(4n) { background: linear-gradient(150deg, #C7B79E, var(--cream-2)); }
+/* side buttons */
+.obj-phone::before { content: ""; position: absolute; left: -3px; top: 62px; width: 3px; height: 34px; border-radius: 2px 0 0 2px; background: #1B2C47; box-shadow: 0 44px 0 #1B2C47; }
+.obj-phone::after { content: ""; position: absolute; right: -3px; top: 80px; width: 3px; height: 46px; border-radius: 0 2px 2px 0; background: #1B2C47; }
+.mini-screen { position: relative; height: 100%; border-radius: 25px; overflow: hidden; background: var(--white); padding: 22px 8px 0; }
+/* soft glass reflection */
+.mini-screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 255, 255, .35) 0 18%, transparent 34%); pointer-events: none; }
+.mini-island { position: absolute; top: 7px; left: 50%; width: 38px; height: 11px; margin-left: -19px; border-radius: 8px; background: #111A2B; }
+.mini-profile { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.mini-avatar { width: 26px; height: 26px; border-radius: 50%; flex: none; padding: 2px; background: conic-gradient(var(--gold), #F3C77A, var(--navy), var(--gold)); }
+.mini-avatar::after { content: "\2726"; display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--cream); border: 1.5px solid var(--white); color: var(--navy); font-size: 9px; line-height: 1; }
+.mini-stats { flex: 1; display: flex; justify-content: space-between; }
+.mini-stats i { display: block; width: 14px; height: 9px; border-radius: 2px; background: rgba(41, 66, 104, .75); box-shadow: 0 5px 0 -2px rgba(41, 66, 104, .2); }
+.mini-bio { display: grid; gap: 3px; margin-bottom: 7px; }
+.mini-bio b { height: 4px; border-radius: 2px; background: var(--navy); width: 55%; }
+.mini-bio i { height: 3px; border-radius: 2px; background: rgba(41, 66, 104, .22); }
+.mini-bio i + i { width: 75%; }
+.mini-highlights { display: flex; gap: 6px; margin-bottom: 7px; }
+.mini-highlights span { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--cream-2); background: var(--gold-soft); }
+.mini-highlights span:nth-child(2) { background: #C9D2DF; }
+.mini-highlights span:nth-child(3) { background: var(--cream-2); }
+.mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px; margin: 0 -8px; }
+.mini-grid span { aspect-ratio: 4 / 5; position: relative; background: linear-gradient(160deg, var(--navy), #6E81A0); }
+.mini-grid span:nth-child(3n+2) { background: linear-gradient(160deg, var(--gold), var(--gold-soft)); }
+.mini-grid span:nth-child(4n) { background: linear-gradient(160deg, #E9DCCB, #C7B79E); }
+.mini-grid span:nth-child(5) { background: linear-gradient(160deg, var(--cream), var(--gold-soft)); }
+.mini-grid span:nth-child(1)::after, .mini-grid span:nth-child(6)::after { content: ""; position: absolute; top: 3px; right: 3px; border-style: solid; border-width: 3px 0 3px 5px; border-color: transparent transparent transparent var(--white); }
+.mini-grid span:nth-child(5)::after { content: "\2665"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--gold); font-size: 11px; }
+.mini-nav { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; background: var(--white); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--cream-2); }
+.mini-nav i { width: 7px; height: 7px; border-radius: 2px; border: 1.5px solid var(--navy); }
+.mini-nav i:nth-child(3) { border-radius: 3px; }
+.mini-nav i:last-child { border-radius: 50%; background: var(--gold); border-color: var(--gold); }
 /* Heart "like" bubble */
 .obj-like {
   --r: 6deg; display: flex; align-items: center; gap: 10px;
@@ -305,7 +328,7 @@ section { position: relative; }
 .obj-note span::before { content: "\2713  "; }
 
 /* ---------- Hero ---------- */
-.hero { padding: calc(var(--header-h) + clamp(40px, 7vw, 88px)) 0 0; overflow: hidden; }
+.hero { padding: calc(var(--header-h) + clamp(40px, 7vw, 88px)) 0 clamp(64px, 9vw, 112px); overflow: hidden; }
 .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.12fr .88fr; gap: clamp(40px, 6vw, 80px); align-items: center; }
 .hero h1 { margin: 0 0 28px; line-height: 1; }
 .hero-logo { display: block; width: min(100%, 580px); height: auto; aspect-ratio: 1665 / 910; }
@@ -313,34 +336,25 @@ section { position: relative; }
 .hero .lead { font-size: clamp(1.1rem, 1.8vw, 1.3rem); max-width: 560px; margin-bottom: 14px; }
 .hero .lead em { font-family: var(--serif); font-size: 1.2em; font-style: italic; }
 .hero-hook { font-family: var(--hand); font-size: 1.45rem; line-height: 1.25; margin-bottom: 28px; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 44px; }
-.hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 580px; padding: 0; margin: 0; list-style: none; }
-.hero-stats li { border-top: 1px solid rgba(41, 66, 104, .2); padding-top: 14px; }
-.stat-num { display: block; font-family: var(--serif); font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1; }
-.stat-num::after { content: " \2726"; color: var(--gold); font-size: .45em; vertical-align: super; }
-.stat-label { display: block; font-size: .92rem; color: var(--navy-soft); margin-top: 6px; line-height: 1.35; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 14px; }
 
 .hero-photo { position: relative; justify-self: center; width: min(100%, 420px); }
 .polaroid {
-  background: var(--white); padding: 14px 14px 62px; border-radius: 6px;
+  background: var(--white); padding: 14px 14px 0; border-radius: 6px;
   box-shadow: var(--shadow); transform: rotate(2deg); position: relative;
 }
 .polaroid .ph { aspect-ratio: 4 / 5; border-radius: 2px; }
 .polaroid .ph-caption { left: auto; right: 12px; }
-.polaroid-note { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-family: var(--hand); font-size: 1.5rem; color: var(--navy); }
+.polaroid-img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 2px; background: var(--cream-2); }
+.side-photo { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 18px; margin-bottom: 22px; }
+.polaroid-note { margin: 0; padding: 12px 8px 16px; text-align: center; font-family: var(--hand); font-size: 1.6rem; line-height: 1.2; color: var(--navy); }
 .stamp { position: absolute; width: 124px; height: 124px; right: -34px; top: -36px; z-index: 4; filter: drop-shadow(0 8px 14px rgba(41, 66, 104, .3)); }
 .stamp .spin { transform-origin: 60px 60px; animation: spin 36s linear infinite; }
 .stamp text { font-family: var(--sans); font-weight: 600; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.hero-photo .obj-phone { left: -70px; bottom: 30px; }
+.hero-photo .obj-phone { left: -84px; bottom: 24px; }
 .hero-photo .obj-like { left: -48px; top: 40px; }
 
-.client-strip { position: relative; z-index: 1; margin-top: clamp(56px, 8vw, 96px); border-top: 1px solid rgba(41, 66, 104, .16); border-bottom: 1px solid rgba(41, 66, 104, .16); }
-.client-strip .wrap { display: flex; align-items: center; gap: 18px 28px; padding-block: 20px; flex-wrap: wrap; justify-content: center; }
-.client-strip .label { font-family: var(--hand); font-size: 1.35rem; }
-.client-list { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 22px; list-style: none; margin: 0; padding: 0; }
-.client-list li { font-family: var(--serif); font-size: 1.3rem; font-style: italic; display: flex; align-items: center; gap: 22px; }
-.client-list li + li::before { content: "\2726"; font-style: normal; font-size: .8rem; color: var(--gold); }
 
 /* ---------- About ---------- */
 .about-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(40px, 7vw, 96px); align-items: center; }
@@ -358,34 +372,57 @@ section { position: relative; }
 .signature { font-family: var(--hand); font-size: 2.6rem; line-height: 1; transform: rotate(-3deg); display: inline-block; }
 .signature-role { display: block; font-size: .92rem; color: var(--navy-soft); margin-top: 6px; }
 
-/* ---------- Featured ---------- */
-.featured .obj-camera { right: 4%; top: 10px; position: absolute; }
-.feat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 32px); }
-.feat-card {
-  display: flex; flex-direction: column; text-decoration: none; color: var(--navy);
-  background: var(--white); border-radius: var(--radius-lg); padding: 12px 12px 24px;
-  box-shadow: var(--shadow-soft); transition: transform .35s ease, box-shadow .35s ease;
+/* ---------- Does this sound like you? (chat bubbles) ---------- */
+.pain { padding-top: clamp(24px, 4vw, 48px); }
+.pain-hint { font-family: var(--hand); font-size: 1.4rem; margin: 0 0 6px; transform: rotate(-4deg); white-space: nowrap; }
+.chat { list-style: none; margin: 0 auto; padding: 0; max-width: 960px; display: flex; flex-direction: column; gap: 18px; }
+.bubble-row { display: flex; }
+.bubble-row:nth-child(1) { padding-left: 0; }
+.bubble-row:nth-child(2) { padding-left: 16%; }
+.bubble-row:nth-child(3) { padding-left: 5%; }
+.bubble-row:nth-child(4) { padding-left: 22%; }
+.bubble-row:nth-child(5) { padding-left: 9%; }
+.bubble-row.reply { justify-content: flex-end; padding-left: 0; margin-top: 10px; }
+.bubble-move { transition: transform .6s cubic-bezier(.2, .8, .2, 1); will-change: transform; max-width: min(560px, 92%); }
+.bubble {
+  position: relative; margin: 0; padding: 18px 24px;
+  background: var(--white); color: var(--navy);
+  border-radius: 26px 26px 26px 8px; box-shadow: var(--shadow-soft);
+  font-size: clamp(1.02rem, 1.6vw, 1.15rem); line-height: 1.5; font-weight: 400;
+  animation: bob 6s ease-in-out infinite; cursor: default;
+  transition: box-shadow .3s ease, background-color .3s ease;
 }
-.feat-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
-.feat-cover { aspect-ratio: 9 / 16; border-radius: 18px; }
-.play {
-  position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin: -36px 0 0 -36px;
-  border-radius: 50%; background: rgba(249, 243, 237, .94); box-shadow: 0 10px 24px -8px rgba(0, 0, 0, .4);
-  transition: transform .3s ease;
+.bubble-row:nth-child(even) .bubble { background: var(--cream-2); animation-delay: -2s; }
+.bubble-row:nth-child(3n) .bubble { animation-delay: -4s; }
+.bubble:hover { box-shadow: var(--shadow); }
+.bubble::after { content: ""; position: absolute; left: -2px; bottom: 0; width: 18px; height: 18px; background: inherit; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.bubble-like {
+  position: absolute; right: -10px; bottom: -12px; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--white); box-shadow: var(--shadow-soft); display: grid; place-items: center;
+  transform: scale(0); transition: transform .35s cubic-bezier(.3, 1.6, .5, 1);
 }
-.play::after { content: ""; position: absolute; left: 29px; top: 23px; border-style: solid; border-width: 13px 0 13px 21px; border-color: transparent transparent transparent var(--navy); }
-.feat-card:hover .play { transform: scale(1.08); }
-.feat-body { padding: 20px 10px 0; }
-.feat-metric { font-family: var(--serif); font-size: clamp(2.6rem, 4.4vw, 3.4rem); line-height: 1; }
-.feat-label { display: flex; align-items: center; gap: 6px; font-size: .95rem; font-weight: 500; margin: 6px 0 16px; }
-.feat-label::before { content: "\2726"; color: var(--gold); }
-.feat-client { font-size: .8rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--navy-soft); }
-.feat-title { font-family: var(--serif); font-size: 1.6rem; line-height: 1.15; margin: 4px 0 8px; }
-.feat-context { color: var(--navy-soft); font-size: .97rem; line-height: 1.55; margin: 0; }
-.feat-open { margin-top: 14px; font-family: var(--hand); font-size: 1.3rem; }
+.bubble-like .heart { width: 11px; height: 11px; margin: 4px 0 0; }
+.bubble-like .heart::before, .bubble-like .heart::after { width: 11px; height: 11px; }
+.bubble-like .heart::before { top: -5.5px; }
+.bubble-like .heart::after { left: 5.5px; }
+.bubble:hover .bubble-like, .bubble.pop .bubble-like { transform: scale(1); }
+.bubble.pop { animation: pop-bubble .5s ease; }
+.bubble-row.reply .bubble { background: var(--navy); color: var(--cream); border-radius: 26px 26px 8px 26px; font-weight: 500; font-size: clamp(1.08rem, 1.7vw, 1.22rem); padding: 20px 26px; box-shadow: 0 0 0 3px var(--gold-soft), var(--shadow); }
+.reply .bubble::after { left: auto; right: -2px; clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.bubble-from { display: block; font-family: var(--hand); font-size: 1.3rem; color: var(--gold); line-height: 1.1; margin-bottom: 4px; }
+@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes pop-bubble { 0% { scale: 1; } 35% { scale: 1.05; } 70% { scale: .98; } 100% { scale: 1; } }
+@media (max-width: 640px) {
+  .bubble-row:nth-child(n) { padding-left: 0; }
+  .bubble-row:nth-child(even) { justify-content: flex-start; padding-left: 8%; }
+  .bubble-move { max-width: 100%; }
+  .pain-hint { display: none; }
+}
+@media (hover: none) { .pain-hint { display: none; } }
 
-/* ---------- Work by niche ---------- */
-.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+/* ---------- Client work (swipeable feeds) ---------- */
+.work .obj-camera { right: 4%; top: 10px; position: absolute; }
+.filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: clamp(36px, 5vw, 56px); }
 .filter-btn {
   min-height: 46px; padding: 10px 20px; border-radius: 999px; cursor: pointer;
   font-family: var(--sans); font-size: .98rem; font-weight: 500;
@@ -394,16 +431,57 @@ section { position: relative; }
 }
 .filter-btn:hover { border-color: var(--navy); }
 .filter-btn[aria-pressed="true"] { background: var(--navy); color: var(--cream); border-color: var(--navy); }
-.work-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; list-style: none; margin: 0; padding: 0; }
-.work-item { background: var(--white); border-radius: var(--radius); padding: 10px 10px 18px; box-shadow: var(--shadow-soft); animation: fadeUp .45s ease both; }
-.work-item[hidden] { display: none; }
-.work-item .ph { aspect-ratio: 4 / 5; border-radius: 12px; }
-.work-item.tall .ph { aspect-ratio: 4 / 5; }
-.work-meta { padding: 14px 8px 0; }
-.work-niche { display: inline-block; font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--cream-2); padding: 4px 10px; border-radius: 999px; margin-bottom: 8px; }
-.work-client { font-family: var(--serif); font-size: 1.45rem; line-height: 1.15; margin: 0; }
-.work-title { color: var(--navy-soft); font-size: .95rem; margin: 4px 0 0; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.case-list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(40px, 6vw, 72px); }
+.case-card { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: center; justify-content: center; }
+.case-card.wide { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.media-stage { display: flex; justify-content: center; align-items: center; position: relative; }
+.media-stage .post-mock { max-width: 360px; }
+.duo .media-stage .phone-wrap { z-index: 1; margin-right: -46px; transform: rotate(-4deg); }
+.duo .media-stage .post-mock { z-index: 2; max-width: 300px; transform: rotate(3deg); }
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; flex: none; }
+.phone { width: 236px; aspect-ratio: 9 / 19.5; background: var(--navy); border-radius: 38px; padding: 9px; box-shadow: var(--shadow); position: relative; }
+.phone::before { content: ""; position: absolute; top: 15px; left: 50%; width: 64px; height: 18px; margin-left: -32px; border-radius: 12px; background: var(--navy); z-index: 2; }
+.phone-screen { position: relative; width: 100%; height: 100%; border-radius: 30px; overflow: hidden; background: #DADADA; }
+.phone-pane { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.phone-pane[hidden] { display: none; }
+.phone-pane.fit-contain { object-fit: contain; object-position: center; background: #111; }
+.sound-btn { position: absolute; right: 10px; bottom: 12px; z-index: 3; border: 0; border-radius: 999px; padding: 6px 12px; font: 600 .78rem var(--sans); background: rgba(249, 243, 237, .92); color: var(--navy); cursor: pointer; }
+.sound-btn[hidden] { display: none; }
+.phone-tabs { display: inline-flex; background: var(--white); border-radius: 999px; padding: 4px; box-shadow: var(--shadow-soft); }
+.phone-tabs button { border: 0; background: transparent; color: var(--navy); font: 500 .9rem var(--sans); padding: 8px 18px; border-radius: 999px; cursor: pointer; min-height: 38px; }
+.phone-tabs button[aria-pressed="true"] { background: var(--navy); color: var(--cream); }
+.duo .phone-tabs { transform: rotate(4deg); }
+.screen-mock { width: 100%; background: var(--white); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.screen-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--cream-2); }
+.screen-bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(41, 66, 104, .3); }
+.screen-bar span { margin-left: 10px; font-size: .78rem; background: var(--white); border-radius: 999px; padding: 2px 14px; color: var(--navy-soft); }
+.screen-mock video { display: block; width: 100%; height: auto; aspect-ratio: 1260 / 720; object-fit: cover; background: var(--cream-2); }
+.case-card[hidden] { display: none; }
+.case-card.flip { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); }
+.case-card.wide.flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+.case-card.flip .media-stage { order: 2; }
+.post-mock { background: var(--white); border-radius: 26px; padding: 12px 12px 10px; box-shadow: var(--shadow); width: 100%; max-width: 380px; }
+.post-head { display: flex; align-items: center; gap: 10px; padding: 4px 6px 12px; }
+.post-avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif); font-size: 1.1rem; color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--gold); }
+.post-name { flex: 1; font-weight: 600; font-size: .92rem; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.post-more { letter-spacing: 2px; color: var(--navy-soft); }
+.post-slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: 14px; scrollbar-width: none; background: var(--cream-2); }
+.post-slides::-webkit-scrollbar { display: none; }
+.post-slides img { flex: 0 0 100%; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; scroll-snap-align: center; }
+.post-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 2px 0; }
+.post-arrow { width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: var(--navy); font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.post-arrow:hover { background: var(--cream-2); }
+.post-pips { display: flex; gap: 6px; }
+.post-pips i { width: 7px; height: 7px; border-radius: 50%; background: rgba(41, 66, 104, .25); transition: background-color .2s ease, transform .2s ease; }
+.post-pips i.on { background: var(--navy); transform: scale(1.2); }
+.case-copy { text-align: center; max-width: 560px; justify-self: center; }
+.work-niche { display: inline-block; font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--cream-2); padding: 5px 12px; border-radius: 999px; margin-bottom: 12px; }
+.case-name { font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 14px; }
+.case-summary { color: var(--navy-soft); margin-bottom: 22px; }
+.case-meta { display: grid; gap: 10px; margin: 0 0 8px; }
+.case-meta div { background: var(--white); border-radius: 14px; padding: 10px 16px; box-shadow: var(--shadow-soft); }
+.case-meta dt { font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--navy-soft); }
+.case-meta dd { margin: 2px 0 0; font-weight: 500; }
 
 /* ---------- Ticker ---------- */
 .ticker { background: var(--navy); color: var(--cream); overflow: hidden; padding: 18px 0; }
@@ -417,7 +495,13 @@ section { position: relative; }
 
 /* ---------- Services ---------- */
 .services .obj-note { right: 3%; top: -10px; position: absolute; }
-.services-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; list-style: none; margin: 0; padding: 0; }
+.services-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; list-style: none; margin: 0; padding: 0; }
+.service { display: flex; flex-direction: column; }
+.service h3 { font-size: 1.75rem; }
+.step-cta { margin-top: auto; padding-top: 18px; font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 5px; align-self: flex-start; }
+.service.feature { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+.service.feature .packages { margin-top: 0; }
+.js .reveal.d4 { transition-delay: .4s; }
 .service {
   background: var(--white); border-radius: var(--radius-lg); padding: 30px 28px 32px;
   box-shadow: var(--shadow-soft); position: relative; transition: transform .3s ease, box-shadow .3s ease;
@@ -430,35 +514,22 @@ section { position: relative; }
 .service.feature .service-num { background: var(--gold); color: var(--navy); }
 .service.feature p { color: #D9E0EA; }
 .packages { list-style: none; padding: 0; margin: 18px 0 20px; display: grid; gap: 8px; }
-.packages li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(249, 243, 237, .3); }
+.packages li { border-bottom: 1px dashed rgba(249, 243, 237, .3); }
+.pkg-link { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 6px; border-radius: 12px; text-decoration: none; color: var(--cream); transition: background-color .2s ease; }
+.pkg-link:hover { background: rgba(249, 243, 237, .08); }
+.pkg-arrow { color: var(--gold); font-size: 1.3rem; transition: transform .25s ease; }
+.pkg-link:hover .pkg-arrow { transform: translateX(4px); }
 .packages .pkg-name { font-family: var(--serif); font-size: 1.35rem; font-style: italic; }
-.packages .pkg-price { color: var(--gold); font-weight: 600; white-space: nowrap; }
 .packages .pkg-note { display: block; font-size: .88rem; color: #C9D2DF; }
 .service .btn { width: 100%; margin-top: 4px; }
 
 /* ---------- Results + testimonials (dark) ---------- */
 .results { background: var(--navy); color: var(--cream); overflow: hidden; }
 .results .constellation-bg { position: absolute; right: -40px; top: 40px; width: 320px; opacity: .22; }
-.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; list-style: none; margin: 0 0 clamp(56px, 8vw, 88px); padding: 0; }
-.metric { border-top: 1px solid rgba(249, 243, 237, .25); padding-top: 18px; }
-.metric .num { display: block; font-family: var(--serif); font-size: clamp(3rem, 6vw, 4.6rem); line-height: 1; color: var(--gold); }
-.metric .lbl { display: block; margin-top: 10px; color: #D9E0EA; font-size: .98rem; line-height: 1.45; }
-.sub-head { font-family: var(--hand); font-size: 1.7rem; margin: 0 0 20px; color: var(--cream); display: flex; align-items: center; gap: 10px; }
-.sub-head::before { content: "\2726"; color: var(--gold); font-size: 1.1rem; }
-.cases { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; list-style: none; margin: 0 0 clamp(56px, 8vw, 88px); padding: 0; }
-.case { background: var(--navy-2); border: 1px solid rgba(249, 243, 237, .12); border-radius: var(--radius-lg); padding: 28px 26px; }
-.case-client { font-family: var(--serif); font-size: 1.8rem; margin: 0 0 4px; }
-.case-niche { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: #C9D2DF; margin-bottom: 18px; }
-.case-step { position: relative; padding: 0 0 18px 26px; margin: 0; }
-.case-step::before { content: ""; position: absolute; left: 5px; top: 8px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--gold); }
-.case-step:not(:last-child)::after { content: ""; position: absolute; left: 10px; top: 22px; bottom: 2px; width: 1px; background: rgba(223, 152, 46, .45); }
-.case-step:last-child { padding-bottom: 0; }
-.case-step:last-child::before { background: var(--gold); }
-.case-step dt { font-size: .8rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
-.case-step dd { margin: 4px 0 0; color: #E6EBF2; font-size: .98rem; line-height: 1.55; }
-.case-step.after dd { color: var(--cream); font-weight: 500; }
-.testimonials { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; list-style: none; margin: 0; padding: 0; }
-.testimonial { background: var(--cream); color: var(--navy); border-radius: var(--radius-lg); padding: 30px 28px; margin: 0; position: relative; }
+.testimonials { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 22px; list-style: none; margin: 0; padding: 0; }
+.testimonials > li { display: flex; }
+.testimonial { background: var(--cream); color: var(--navy); border-radius: var(--radius-lg); padding: 30px 28px; margin: 0; position: relative; flex: 1; display: flex; flex-direction: column; }
+.testimonial figcaption { margin-top: auto; }
 .testimonial .stars { display: flex; gap: 4px; margin-bottom: 12px; }
 .testimonial .stars span { width: 16px; height: 16px; background: var(--navy); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
 .testimonial blockquote { margin: 0 0 18px; font-family: var(--serif); font-size: 1.45rem; line-height: 1.3; }
@@ -535,24 +606,51 @@ section { position: relative; }
 .js .reveal.d2 { transition-delay: .2s; }
 .js .reveal.d3 { transition-delay: .3s; }
 
+/* ---------- Centred text ---------- */
+.section-head { flex-direction: column; align-items: center; text-align: center; }
+.section-head .intro { margin-inline: auto; }
+.hero-copy { text-align: center; }
+.hero-logo { margin-inline: auto; }
+.hero-tagline { margin-inline: auto; }
+.hero .lead { margin-inline: auto; }
+.hero-actions { justify-content: center; }
+.about-copy { text-align: center; }
+.about-copy p { margin-inline: auto; }
+.promises li { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.service { text-align: center; align-items: center; }
+.service-num { margin-inline: auto; }
+.step-cta { align-self: center; }
+.service.feature .feature-copy { text-align: center; }
+.pkg-link { justify-content: center; text-align: center; }
+.packages .pkg-note { margin-top: 2px; }
+.testimonial { text-align: center; align-items: center; }
+.testimonial .stars { justify-content: center; }
+.contact-side { text-align: center; }
+.contact-links .btn { justify-content: center; text-align: center; }
+.contact-form form > .btn { display: flex; width: 100%; }
+.form-note { text-align: center; }
+.footer-grid { flex-direction: column; align-items: center; text-align: center; }
+.socials { justify-content: center; }
+.footer-bottom { justify-content: center; text-align: center; gap: 12px 28px; }
+.modal-card { text-align: center; }
+.modal-card .field { text-align: left; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .float { transform: scale(.8); }
-  .hero-photo .obj-phone { left: -40px; }
+  .hero-photo .obj-phone { left: -56px; }
   .about-photo .obj-coffee { right: -20px; }
   .services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cases { grid-template-columns: 1fr; max-width: 720px; }
-  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .service.feature { grid-template-columns: 1fr; }
 }
 @media (max-width: 960px) {
   .hero-grid, .about-grid, .contact-grid { grid-template-columns: 1fr; }
   .hero-photo { width: min(80%, 380px); margin-top: 8px; }
   .about-photo { width: min(80%, 360px); }
-  .featured .obj-camera, .services .obj-note { display: none; }
+  .work .obj-camera, .services .obj-note { display: none; }
+  .case-card, .case-card.flip, .case-card.wide, .case-card.wide.flip { grid-template-columns: 1fr; }
+  .case-card.flip .media-stage { order: 0; }
   .section-head { flex-direction: column; align-items: flex-start; }
-}
-@media (max-width: 860px) {
-  .feat-grid { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
 }
 @media (max-width: 760px) {
   /* Floating objects are hidden on small screens so they never cover text */
@@ -568,17 +666,12 @@ section { position: relative; }
   .services-grid, .testimonials { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; gap: 0; }
   .hero-actions .btn { width: 100%; }
-  .hero-stats { gap: 10px; }
-  .stat-label { font-size: .82rem; }
   .hero-photo, .about-photo { width: 88%; }
-  .metrics { gap: 26px 16px; }
-  .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .work-client { font-size: 1.2rem; }
+  .duo .media-stage { flex-direction: column; gap: 24px; }
+  .duo .media-stage .phone-wrap, .duo .media-stage .post-mock, .duo .phone-tabs { margin: 0; transform: none; }
+  .phone { width: 220px; }
   .testimonial blockquote { font-size: 1.3rem; }
   .modal-card { padding: 36px 20px 24px; }
-}
-@media (max-width: 380px) {
-  .work-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- Reduced motion ---------- */
@@ -620,10 +713,9 @@ section { position: relative; }
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links"><span></span><span class="sr-only">Open menu</span></button>
     <ul class="nav-links" id="nav-links">
       <li><a href="#about">About</a></li>
-      <li><a href="#featured">Featured</a></li>
       <li><a href="#work">Work</a></li>
       <li><a href="#services">Services</a></li>
-      <li><a href="#results">Results</a></li>
+      <li><a href="#results">Kind words</a></li>
       <li><a href="#contact">Contact</a></li>
       <li class="nav-cta"><a href="#" data-link="call">Book a call</a></li>
     </ul>
@@ -648,21 +740,15 @@ section { position: relative; }
       <p class="hero-hook reveal d2">A quiet account tells people your business might be quiet too.</p>
       <div class="hero-actions reveal d3">
         <a class="btn btn-gold" href="#" data-link="call">Book a free discovery call <span class="star" aria-hidden="true">&#10022;</span></a>
-        <a class="btn btn-outline" href="#featured">See my work</a>
+        <a class="btn btn-outline" href="#work">See my work</a>
       </div>
-      <!-- Hero numbers come from HERO_STATS in the script -->
-      <ul class="hero-stats reveal d3" id="hero-stats"></ul>
     </div>
 
     <div class="hero-photo reveal d2">
       <div class="polaroid">
-        <!-- PHOTO: to use your real photo, replace the div below with:
-             <img class="media-img" src="images/marina.jpg" alt="Marina Lira, social media manager at The Gemini Social" style="aspect-ratio:4/5">
-             Tip: export it at about 900px wide as .jpg or .webp so it loads fast. -->
-        <div class="ph" role="img" aria-label="Placeholder for Marina's photo, 4:5">
-          <span class="ph-caption">Marina's photo 4:5</span>
-        </div>
-        <p class="polaroid-note">Marina, Sunshine Coast</p>
+        <!-- PHOTO: to change it, replace media/marina-hero.jpg (about 1200px tall, .jpg) -->
+        <img class="polaroid-img" src="media/marina-hero.jpg" alt="Marina Lira, founder of The Gemini Social, smiling beside a plant" width="800" height="1000" style="object-position: 50% 30%">
+        <p class="polaroid-note">Marina, founder</p>
       </div>
       <!-- Round dashed stamp -->
       <svg class="stamp" viewBox="0 0 120 120" aria-hidden="true">
@@ -677,20 +763,16 @@ section { position: relative; }
       </svg>
       <!-- Floating CSS objects -->
       <div class="float obj-phone" aria-hidden="true">
-        <div class="phone-screen">
-          <div class="phone-top"><i></i><b></b></div>
-          <div class="phone-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="mini-screen">
+          <span class="mini-island"></span>
+          <div class="mini-profile"><span class="mini-avatar"></span><span class="mini-stats"><i></i><i></i><i></i></span></div>
+          <div class="mini-bio"><b></b><i></i><i></i></div>
+          <div class="mini-highlights"><span></span><span></span><span></span></div>
+          <div class="mini-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="mini-nav"><i></i><i></i><i></i><i></i><i></i></div>
         </div>
       </div>
       <div class="float obj-like" aria-hidden="true"><span class="heart"></span><span class="like-lines"><i></i><i></i></span></div>
-    </div>
-  </div>
-
-  <!-- Client strip: names come from CLIENTS in the script -->
-  <div class="client-strip">
-    <div class="wrap">
-      <span class="label">Businesses I've worked with</span>
-      <ul class="client-list" id="client-list"></ul>
     </div>
   </div>
 </section>
@@ -700,11 +782,8 @@ section { position: relative; }
   <div class="wrap about-grid">
     <div class="about-photo reveal">
       <div class="polaroid">
-        <!-- PHOTO: replace the div below with
-             <img class="media-img" src="images/marina-about.jpg" alt="Marina Lira planning content at her desk" style="aspect-ratio:4/5"> -->
-        <div class="ph" role="img" aria-label="Placeholder for Marina's second photo, 4:5">
-          <span class="ph-caption">Marina at work 4:5</span>
-        </div>
+        <!-- PHOTO: to change it, replace media/marina-about.jpg -->
+        <img class="polaroid-img" src="media/marina-about.jpg" alt="Marina Lira standing by a bookshelf" width="800" height="1000" loading="lazy" style="object-position: 50% 25%">
         <p class="polaroid-note">strategy + creativity</p>
       </div>
       <div class="float obj-camera" aria-hidden="true"><span class="cam-lens"></span></div>
@@ -715,9 +794,9 @@ section { position: relative; }
       <p class="eyebrow reveal">A little about me</p>
       <h2 id="about-title" class="reveal d1">Two heads are better than <em>one</em></h2>
       <div class="reveal d2">
-        <p>Hi, I'm Marina. I've spent around five years working across social media, radio and podcasting, and my favourite part has always been the same: helping a good business get the attention it deserves.</p>
-        <p>Most owners I work with are brilliant at what they do and completely stretched for time. Social media becomes the job that happens at 10pm, or not at all. That's where I come in.</p>
-        <p>Think of it as strategy and creativity, you and me, side by side. You bring the heart of your business, I bring the plan, the content and the consistency. I'm based on the Sunshine Coast and work with businesses across Australia and New Zealand.</p>
+        <p>Hi, I'm Marina, founder of The Gemini Social. As a true Gemini, communication is at the heart of everything I do. My background spans social media, radio and podcasting, so telling stories that make people stop and listen comes naturally to me.</p>
+        <p>I'm curious, genuinely interested in people and energised by the stories behind the businesses I work with. The Gemini Social was built on one simple belief: social media works best when it feels real.</p>
+        <p>That's why I work closely with a small number of clients at a time, getting to know your business, your voice and your goals well enough to create content that actually sounds and looks like you. Think of it as strategy and creativity, you and me, side by side. If you want someone who'll treat your business with the same care you do, you're in the right place.</p>
       </div>
       <ul class="promises reveal d2">
         <li><span class="promise-num" aria-hidden="true">1</span><span><strong>You approve the plan first</strong><span class="txt">Your content plan is signed off by you before anything goes live. No surprises.</span></span></li>
@@ -732,36 +811,38 @@ section { position: relative; }
   </div>
 </section>
 
-<div class="divider" aria-hidden="true"><span class="line"></span><svg class="constellation"><use href="#gemini"/></svg><span class="line"></span></div>
-
-<!-- ================= 3. FEATURED CONTENT ================= -->
-<section class="section featured" id="featured" aria-labelledby="featured-title">
+<!-- ================= DOES THIS SOUND LIKE YOU? ================= -->
+<section class="section pain" id="sound-like-you" aria-labelledby="pain-title">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head pain-head">
       <div>
-        <p class="eyebrow reveal">Featured content</p>
-        <h2 id="featured-title" class="reveal d1">Content that got <em>seen</em></h2>
-        <p class="intro reveal d2">A few favourites from the feed. Tap any card to watch the real thing.</p>
+        <p class="eyebrow reveal">Be honest</p>
+        <h2 id="pain-title" class="reveal d1">Does this sound like <em>you</em>?</h2>
+        <p class="intro reveal d2">If you nodded at any of these, you're in good company. Most of the business owners I work with started right here.</p>
       </div>
-      <div class="float obj-camera" aria-hidden="true"><span class="cam-lens"></span></div>
+      <p class="pain-hint reveal d3" aria-hidden="true">go on, give them a nudge &#8595;</p>
     </div>
-    <!-- Cards are built from FEATURED in the script. The post link and the cover image are set there. -->
-    <div class="feat-grid" id="feat-grid"></div>
+    <!-- Messages come from PAIN_POINTS and PAIN_REPLY in the script -->
+    <ul class="chat" id="chat" aria-label="Common social media struggles"></ul>
   </div>
 </section>
 
-<!-- ================= 4. WORK BY NICHE ================= -->
-<section class="section work" id="work" aria-labelledby="work-title" style="padding-top:0">
+<div class="divider" aria-hidden="true"><span class="line"></span><svg class="constellation"><use href="#gemini"/></svg><span class="line"></span></div>
+
+<!-- ================= 3. CLIENT WORK ================= -->
+<section class="section work" id="work" aria-labelledby="work-title">
   <div class="wrap">
     <div class="section-head">
       <div>
-        <p class="eyebrow reveal">Portfolio</p>
-        <h2 id="work-title" class="reveal d1">Work by <em>niche</em></h2>
-        <p class="intro reveal d2">Fitness and wellness, property and local businesses. Pick a niche and have a look around.</p>
+        <p class="eyebrow reveal">Client work</p>
+        <h2 id="work-title" class="reveal d1">Content that keeps <em>showing up</em></h2>
+        <p class="intro reveal d2">Real content for real businesses. Pick a niche, then swipe through each feed to see the work.</p>
       </div>
+      <div class="float obj-camera" aria-hidden="true"><span class="cam-lens"></span></div>
     </div>
     <div class="filters reveal" id="filters" role="group" aria-label="Filter work by niche"></div>
-    <ul class="work-grid" id="work-grid" aria-live="polite"></ul>
+    <!-- Client stories are built from WORK in the script -->
+    <ul class="case-list" id="work-list" aria-live="polite"></ul>
   </div>
 </section>
 
@@ -775,9 +856,9 @@ section { position: relative; }
   <div class="wrap">
     <div class="section-head">
       <div>
-        <p class="eyebrow reveal">Services</p>
+        <p class="eyebrow reveal">What you can expect working with me</p>
         <h2 id="services-title" class="reveal d1">How I <em>help</em> you</h2>
-        <p class="intro reveal d2">Doing it all yourself costs more than you think. Hours every week on captions, second-guessing what to post, then going quiet the moment things get busy. Here's how I take that off your plate.</p>
+        <p class="intro reveal d2">Doing it all yourself costs more than you think. Hours every week on captions, second-guessing what to post, then going quiet the moment things get busy. Here's how we take that off your plate, step by step.</p>
       </div>
       <div class="float obj-note" aria-hidden="true"><b>This week</b><span>Mon: reel</span><span>Wed: carousel</span><span>Fri: stories</span></div>
     </div>
@@ -785,23 +866,17 @@ section { position: relative; }
   </div>
 </section>
 
-<!-- ================= 6. RESULTS AND TESTIMONIALS ================= -->
+<!-- ================= 6. TESTIMONIALS ================= -->
 <section class="section results on-dark" id="results" aria-labelledby="results-title">
   <svg class="constellation constellation-bg" aria-hidden="true"><use href="#gemini"/></svg>
   <div class="wrap">
     <div class="section-head">
       <div>
-        <p class="eyebrow reveal">Results</p>
-        <h2 id="results-title" class="reveal d1">Real results, kind <em>words</em></h2>
-        <p class="intro reveal d2">What happens when a business shows up consistently, with a plan and a bit of heart.</p>
+        <p class="eyebrow reveal">Kind words</p>
+        <h2 id="results-title" class="reveal d1">Words from my <em>clients</em></h2>
+        <p class="intro reveal d2">Collaborative, organised and creatively driven. Here's what it's like working together, in their own words.</p>
       </div>
     </div>
-    <ul class="metrics" id="metrics"></ul>
-
-    <h3 class="sub-head reveal">Before and after</h3>
-    <ul class="cases" id="cases"></ul>
-
-    <h3 class="sub-head reveal">What clients say</h3>
     <ul class="testimonials" id="testimonials"></ul>
   </div>
 </section>
@@ -813,7 +888,7 @@ section { position: relative; }
       <div>
         <p class="eyebrow reveal">Contact</p>
         <h2 id="contact-title" class="reveal d1">Let's work <em>together</em></h2>
-        <p class="intro reveal d2">Tell me a little about your business and where you'd like to be. I'll reply personally, usually within [00] business days.</p>
+        <p class="intro reveal d2">Tell me a little about your business and where you'd like to be. I'll reply personally, usually within 2 business days.</p>
       </div>
     </div>
 
@@ -845,16 +920,13 @@ section { position: relative; }
       </div>
 
       <aside class="contact-side reveal d1" aria-label="Other ways to reach me">
+        <img class="side-photo" src="media/marina-desk.jpg" alt="Marina's hands typing on a laptop, with a coffee cup and notebook" width="1400" height="933" loading="lazy">
         <h3>Prefer a quick <em>chat</em>?</h3>
-        <p>Pick whatever's easiest for you. A discovery call is free and takes about [00] minutes.</p>
+        <p>Pick whatever's easiest for you. A discovery call is free and takes about 60 minutes.</p>
         <div class="contact-links">
           <a class="btn btn-gold" href="#" data-link="call">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
             Book a discovery call
-          </a>
-          <a class="btn btn-outline" href="#" data-link="whatsapp" target="_blank" rel="noopener">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 19z"/></svg>
-            <span>WhatsApp <small data-text="whatsapp">+61 000 000 000</small></span>
           </a>
           <a class="btn btn-outline" href="#" data-link="email">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>
@@ -923,8 +995,8 @@ section { position: relative; }
    EDIT YOUR CONTENT HERE
    Everything below in CAPITALS is plain data. Change the text between
    the quotes and save. You don't need to touch the HTML above.
-   Placeholders to replace: [00], Brand 04 to Brand 12, Client 01 to
-   Client 04, +61 000 000 000, DISCOVERY_CALL_LINK, FACEBOOK_LINK.
+   Placeholders to replace:
+   FACEBOOK_LINK.
    ===================================================================== */
 
 /* ---- Contact details and links ---- */
@@ -932,100 +1004,114 @@ const CONTACT = {
   email: "thegeminisocialco@gmail.com",
   instagram: "thegeminisocial",              // without the @
   facebook: "FACEBOOK_LINK",                 // paste your full Facebook page link
-  whatsappDisplay: "+61 000 000 000",        // how the number shows on the page
-  whatsappNumber: "61000000000",             // digits only, country code first, for the wa.me link
-  discoveryCall: "DISCOVERY_CALL_LINK",      // paste your booking link (Calendly, etc.)
+  discoveryCall: "https://calendar.app.google/nwmQoBqqzS6sE1ut8",   // your booking link
   website: "https://thegeminisocial.com"
 };
 
-/* ---- Hero numbers. value: a number to animate, or null to show [00] ---- */
-const HERO_STATS = [
-  { value: null, prefix: "", suffix: "+", label: "accounts managed" },
-  { value: null, prefix: "", suffix: "+", label: "pieces of content created" },
-  { value: null, prefix: "", suffix: "K", label: "total reach generated" }
+/* ---- "Does this sound like you?" chat bubbles ----
+   PAIN_POINTS are the client messages, PAIN_REPLY is your answer at the end. */
+const PAIN_POINTS = [
+  "I'm not sure what to post, or how to reach my audience.",
+  "I post content, but it's not getting any engagement.",
+  "I know I need to show up online. I just need help with the creative side.",
+  "I've got hundreds of photos, ideas and video snippets... and the moments keep slipping by.",
+  "The busier I get, the less time there is for social media."
 ];
+const PAIN_REPLY = "Sound familiar? You're not alone, and you don't have to do it all yourself. That's exactly where I come in.";
 
-/* ---- Businesses I've worked with (hero strip) ---- */
-const CLIENTS = [
-  "JPB Fitness",
-  "Wildling Studio",
-  "Wairarapa Property Consultants",
-  "Brand 04",
-  "Brand 05",
-  "Brand 06"
-];
-
-/* ---- Featured content (3 cards) ----
-   link:  WHERE THE POST LINK GOES. Paste the full Instagram or Facebook URL,
-          e.g. "https://www.instagram.com/reel/XXXXXXXX/". "#" means no link yet.
-   cover: WHERE THE COVER GOES. Put the image path, e.g. "images/jpb-cover.jpg"
-          (a 9:16 image around 600px wide). Leave "" to show the gradient block.
-   metric: the number, or null for [00]. prefix/suffix wrap it, e.g. "+" and "K" = +120K */
-const FEATURED = [
+/* ---- Client work ("Content that keeps showing up") ----
+   niche:  the filter it appears under. Filters are made automatically from these.
+   All files live in the media folder. Each client can show any of these:
+     phone:  a phone with their Instagram feed screenshot, and optionally a reel (video).
+             fit: "cover" fills the phone, "contain" shows the whole video (good for 4:5 reels).
+     posts:  swipeable posts like an Instagram carousel (4:5 images, about 900px wide).
+     screen: a landscape video in a browser window (for example a Canva screen recording).
+   link:   optional, the client's Instagram or a post URL. Leave "" for none. */
+const WORK = [
   {
     client: "JPB Fitness",
-    metric: null, prefix: "+", suffix: "K", metricLabel: "reel views",
-    title: "[Content title]",
-    context: "My strongest campaign result so far. [Add one short line of context]",
-    format: "Reel cover 9:16",
-    cover: "",
-    link: "#"
+    niche: "Fitness and Wellness",
+    summary: "A women's fitness studio brought to life through educational content, community storytelling and consistent reels that turned followers into enquiries, and enquiries into members.",
+    service: "Social Media Management + Content Capture",
+    focus: "Carousel graphics, Reels",
+    platform: "Instagram + shared content on Facebook",
+    phone: { feed: "media/jpb-feed.jpg", feedAlt: "JPB Fitness Instagram feed", reel: "media/jpb-reel.mp4", poster: "media/jpb-reel-poster.jpg", reelAlt: "JPB Fitness reel of women training with kettlebells", fit: "cover" },
+    posts: [
+      { src: "media/jpb-post-1.jpg", alt: "Carousel cover: reasons strength training is non-negotiable for women over 40" },
+      { src: "media/jpb-post-2.jpg", alt: "Carousel slide: your metabolism is changing" },
+      { src: "media/jpb-post-3.jpg", alt: "Carousel slide: your bones need it more than you think" },
+      { src: "media/jpb-post-4.jpg", alt: "Carousel slide: that is exactly what we are here for at JPB Fitness" }
+    ],
+    link: ""
   },
   {
-    client: "Wildling Studio",
-    metric: null, prefix: "+", suffix: "", metricLabel: "[What this number means]",
-    title: "[Content title]",
-    context: "[One short line of context about this post]",
-    format: "Reel cover 9:16",
-    cover: "",
-    link: "#"
+    client: "Wildling Pilates Studio",
+    niche: "Fitness and Wellness",
+    summary: "A pilates studio that wanted to show up consistently, build brand awareness and connect with a wider community. Through regular carousels and reels, their social media became a reliable, recognisable presence that reaches beyond their existing audience, including supporting the launch of a new service.",
+    service: "Social Media Management",
+    focus: "Carousels, Reels and campaign launch support",
+    platform: "Instagram + shared content on Facebook",
+    posts: [
+      { src: "media/wildling-1.jpg", alt: "Carousel cover: what actually makes a class challenging" },
+      { src: "media/wildling-2.jpg", alt: "Carousel slide: it's not about speed" },
+      { src: "media/wildling-3.jpg", alt: "Carousel slide: it's about control" },
+      { src: "media/wildling-4.jpg", alt: "Carousel slide: that's what makes reformer genuinely challenging" },
+      { src: "media/wildling-5.jpg", alt: "Carousel slide: slow, controlled, effective" }
+    ],
+    link: ""
   },
   {
     client: "Wairarapa Property Consultants",
-    metric: null, prefix: "+", suffix: "", metricLabel: "[What this number means]",
-    title: "[Content title]",
-    context: "[One short line of context about this post]",
-    format: "Carousel cover 9:16",
-    cover: "",
-    link: "#"
+    niche: "Property",
+    summary: "A property valuation and agribusiness consultancy firm. Together we created content that informs their audience, strengthens community ties and establishes them as a credible, independent voice in their market.",
+    service: "Social Media Management + Content Creation",
+    focus: "Carousel graphics, data-driven Reels",
+    platform: "Instagram + shared content on Facebook",
+    phone: { feed: "media/wpc-feed.jpg", feedAlt: "Wairarapa Property Consultants Instagram feed", reel: "media/wpc-reel.mp4", poster: "media/wpc-reel-poster.jpg", reelAlt: "Wairarapa Property Consultants data reel", fit: "contain" },
+    link: ""
+  },
+  {
+    client: "Shari Smith",
+    niche: "Property",
+    summary: "A real estate agent who wanted her community to see the person behind the signboard. Through on-site content capture, carousels and a reel series showcasing properties and behind the scenes moments, her presence came alive. People started noticing, and her social media has since been recognised by her real estate company.",
+    service: "Social Media Management + On-site Content Creation",
+    focus: "Carousel graphics, Reels series and property showcases",
+    platform: "Instagram + shared content on Facebook",
+    posts: [
+      { src: "media/shari-1.jpg", alt: "Carousel cover: how much deposit do you actually need to buy in NZ right now?" },
+      { src: "media/shari-3.jpg", alt: "Still from Shari's on-site interview reel" },
+      { src: "media/shari-2.jpg", alt: "Client review post with five stars" }
+    ],
+    link: ""
+  },
+  {
+    client: "Efficiency Powerhouse Solutions",
+    niche: "Personal Brands",
+    summary: "A business and mindset coaching brand with a wealth of ideas and strategy that needed bringing to life visually. Over 300 carousels created to build a consistent, content-rich presence that positions her as a trusted expert voice in her field.",
+    service: "Content Creation",
+    focus: "Carousel graphics at scale",
+    platform: "Instagram",
+    screen: { video: "media/eps-canva.mp4", poster: "media/eps-canva-poster.jpg", alt: "Screen recording scrolling through a Canva board of coaching carousels", label: "canva.com" },
+    link: ""
   }
 ];
 
-/* ---- Niches for the work filters (the order they appear in) ---- */
-const NICHES = ["Fitness and Wellness", "Property", "Local Business"];
-
-/* ---- Work gallery. niche must match one of NICHES exactly.
-   cover: image path, or "" for the gradient block. link: optional post URL. ---- */
-const WORK = [
-  { client: "JPB Fitness", niche: "Fitness and Wellness", title: "[Project title]", format: "Reel 9:16", cover: "", link: "" },
-  { client: "JPB Fitness", niche: "Fitness and Wellness", title: "[Project title]", format: "Carousel 4:5", cover: "", link: "" },
-  { client: "Wildling Studio", niche: "Fitness and Wellness", title: "[Project title]", format: "Photo shoot 4:5", cover: "", link: "" }, // check this niche is right
-  { client: "Wildling Studio", niche: "Fitness and Wellness", title: "[Project title]", format: "Story 9:16", cover: "", link: "" },
-  { client: "Wairarapa Property Consultants", niche: "Property", title: "[Project title]", format: "Reel 9:16", cover: "", link: "" },
-  { client: "Wairarapa Property Consultants", niche: "Property", title: "[Project title]", format: "Carousel 4:5", cover: "", link: "" },
-  { client: "Brand 04", niche: "Property", title: "[Project title]", format: "Photo shoot 4:5", cover: "", link: "" },
-  { client: "Brand 05", niche: "Local Business", title: "[Project title]", format: "Reel 9:16", cover: "", link: "" },
-  { client: "Brand 06", niche: "Local Business", title: "[Project title]", format: "Carousel 4:5", cover: "", link: "" },
-  { client: "Brand 07", niche: "Local Business", title: "[Project title]", format: "Story 9:16", cover: "", link: "" },
-  { client: "Brand 08", niche: "Fitness and Wellness", title: "[Project title]", format: "Reel 9:16", cover: "", link: "" },
-  { client: "Brand 09", niche: "Local Business", title: "[Project title]", format: "Photo shoot 4:5", cover: "", link: "" }
-];
-
-/* ---- Monthly packages (shown inside service 06). Prices are placeholders. ---- */
+/* ---- Monthly packages (shown inside service 06).
+   Each one links to packages.html, where the full details live. id must match the id there. ---- */
 const PACKAGES = [
-  { name: "Presence Social", price: "[$00]/month", note: "[Who it's for and what's included]" },
-  { name: "Elevate Social", price: "[$00]/month", note: "[Who it's for and what's included]" },
-  { name: "Essence", price: "[$00]/month", note: "[Who it's for and what's included]" }
+  { name: "Presence Social", id: "presence-social", note: "A consistent, reliable presence without doing it alone" },
+  { name: "Elevate Social", id: "elevate-social", note: "Grow on Instagram and build community on Facebook" }
 ];
 
-/* ---- Services (six cards). feature: true makes the card navy and adds the packages list. ---- */
+/* ---- How I help you: the steps of working together.
+   cta: true adds a "Book now" link to that card.
+   feature: true is the wide navy card with the packages list. ---- */
 const SERVICES = [
-  { title: "Social media management", text: "I plan, create, schedule and post across Instagram and Facebook, so your account stays active and consistent without you remembering to post at 9pm." },
-  { title: "Content creation", text: "Reels, carousels and captions that sound like you on a good day. Scroll-stopping, on brand and made for the people you actually want to reach." },
-  { title: "Strategy and account audit", text: "An honest look at what's working, what isn't and where the opportunities are, with a clear plan you can actually follow." },
-  { title: "Photo and video shoot coordination", text: "I organise the shot list, timing and details, so one shoot gives you weeks of content that looks and feels like your business." },
-  { title: "Community management", text: "Replying to comments and DMs and connecting with local accounts, because followers turn into customers through real conversations." },
-  { title: "Monthly packages", text: "Three ways to work together, depending on where your business is right now.", feature: true }
+  { title: "Book a free consultation", text: "A relaxed 60 minute call where you share your business, your goals and what you need support with. I get to know you.", cta: true },
+  { title: "Finding the right fit", text: "Together we decide on the approach that makes the most sense for where your business is right now." },
+  { title: "Onboarding and strategy call", text: "You complete an onboarding form and we have a dedicated call, so I can learn everything about your brand, voice and audience before creating anything." },
+  { title: "Creation and approval", text: "Your content calendar and posts are created and shared with you for review. Nothing goes live without your approval, and your input is part of the process from start to finish." },
+  { title: "Monthly packages", text: "Two ways to get started, depending on where your business is right now. Not sure which one fits? I'm always happy to tailor things to suit you.", feature: true }
 ];
 
 /* ---- Words in the navy ticker strip ---- */
@@ -1034,27 +1120,12 @@ const TICKER = [
   "Account audits", "Photo shoots", "Community management", "Instagram", "Facebook"
 ];
 
-/* ---- Results metrics (4 counters). value: number or null for [00] ---- */
-const METRICS = [
-  { value: 5, prefix: "", suffix: "", label: "years across social media, radio and podcasting" },
-  { value: null, prefix: "", suffix: "%", label: "average engagement growth" },
-  { value: null, prefix: "", suffix: "+", label: "enquiries generated for clients" },
-  { value: null, prefix: "", suffix: "", label: "hours a month handed back to each client" }
-];
-
-/* ---- Client results, before and after style (3) ---- */
-const RESULTS = [
-  { client: "Client 01", niche: "[Niche]", challenge: "[The challenge, e.g. posting had dropped off and enquiries were slowing]", did: "[What we did, e.g. a content plan, a photo shoot and weekly reels]", changed: "[What changed, e.g. +[00]% reach in [00] months]" },
-  { client: "Client 02", niche: "[Niche]", challenge: "[The challenge]", did: "[What we did]", changed: "[What changed]" },
-  { client: "Client 03", niche: "[Niche]", challenge: "[The challenge]", did: "[What we did]", changed: "[What changed]" }
-];
-
-/* ---- Testimonials (4) ---- */
+/* ---- Testimonials ---- */
 const TESTIMONIALS = [
-  { quote: "[Client testimonial to be added. Two or three sentences about what it was like working together.]", name: "Client 01", business: "[Business name]" },
-  { quote: "[Client testimonial to be added. Two or three sentences about what it was like working together.]", name: "Client 02", business: "[Business name]" },
-  { quote: "[Client testimonial to be added. Two or three sentences about what it was like working together.]", name: "Client 03", business: "[Business name]" },
-  { quote: "[Client testimonial to be added. Two or three sentences about what it was like working together.]", name: "Client 04", business: "[Business name]" }
+  { quote: "Marina has taken the time to truly understand me, my business, and what I am trying to achieve. She adapts her approach to suit our goals and meets me where I am at, which has made the whole process feel collaborative and supportive.", name: "Ashlee Sinclair", business: "Founder of Wildling Pilates Studio" },
+  { quote: "She has an incredible creative eye, is organised, dependable, and consistently delivers on time. Having someone who can take my ideas and bring them to life has been invaluable.", name: "Kami Schatz", business: "Founder of Efficiency Powerhouse Solutions Coaching" },
+  { quote: "Suddenly, all those moments I had been too busy to capture myself were being documented and shared. People are stopping me and saying, Shari I see you everywhere.", name: "Shari Smith", business: "Real Estate Agent" },
+  { quote: "Marina communicated seamlessly with our staff and created content at arms length. Her communication is very prompt and the process particularly well organised.", name: "Daniel Lovett", business: "Director of Wairarapa Property Consultants" }
 ];
 
 /* ---- Capture card timing ---- */
@@ -1073,26 +1144,9 @@ const CAPTURE_DELAY_MS = 7000;
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const isRealLink = (url) => /^(https?:|mailto:)/i.test(url || "");
 
-  /* Number that animates when visible, or a [00] placeholder */
-  function countMarkup(item, cls) {
-    if (typeof item.value === "number") {
-      return `<span class="${cls}" data-count="${item.value}" data-prefix="${esc(item.prefix || "")}" data-suffix="${esc(item.suffix || "")}">${esc((item.prefix || "") + "0" + (item.suffix || ""))}</span>`;
-    }
-    return `<span class="${cls}">${esc((item.prefix || "") + "[00]" + (item.suffix || ""))}</span>`;
-  }
-
-  /* Gradient placeholder, or the real image once a cover path is added */
-  function mediaMarkup(cover, caption, alt, extraClass) {
-    if (cover) {
-      return `<div class="ph ${extraClass || ""}"><img src="${esc(cover)}" alt="${esc(alt)}" loading="lazy"></div>`;
-    }
-    return `<div class="ph ${extraClass || ""}" role="img" aria-label="Placeholder: ${esc(caption)}"><span class="ph-caption">${esc(caption)}</span></div>`;
-  }
-
   /* ---- Links ---- */
   const links = {
     call: CONTACT.discoveryCall === "DISCOVERY_CALL_LINK" ? "#contact" : CONTACT.discoveryCall,
-    whatsapp: "https://wa.me/" + CONTACT.whatsappNumber,
     email: "mailto:" + CONTACT.email,
     instagram: "https://www.instagram.com/" + CONTACT.instagram + "/",
     facebook: CONTACT.facebook === "FACEBOOK_LINK" ? "#" : CONTACT.facebook,
@@ -1107,51 +1161,171 @@ const CAPTURE_DELAY_MS = 7000;
   });
   $$("[data-text]").forEach((el) => {
     const key = el.dataset.text;
-    if (key === "whatsapp") el.textContent = CONTACT.whatsappDisplay;
     if (key === "email") el.textContent = CONTACT.email;
     if (key === "instagram") el.textContent = "@" + CONTACT.instagram;
   });
 
-  /* ---- Hero stats + client strip ---- */
-  $("#hero-stats").innerHTML = HERO_STATS.map((s) =>
-    `<li>${countMarkup(s, "stat-num")}<span class="stat-label">${esc(s.label)}</span></li>`).join("");
-  $("#client-list").innerHTML = CLIENTS.map((c) => `<li>${esc(c)}</li>`).join("");
+  /* ---- "Does this sound like you?" chat ---- */
+  $("#chat").innerHTML = PAIN_POINTS.map((t, i) => `
+    <li class="bubble-row reveal" style="transition-delay:${i * 0.12}s">
+      <div class="bubble-move" data-depth="${(0.7 + (i % 3) * 0.25).toFixed(2)}">
+        <p class="bubble">${esc(t)}<span class="bubble-like" aria-hidden="true"><span class="heart"></span></span></p>
+      </div>
+    </li>`).join("") + `
+    <li class="bubble-row reply reveal" style="transition-delay:${PAIN_POINTS.length * 0.12}s">
+      <div class="bubble-move" data-depth="0.6">
+        <p class="bubble"><span class="bubble-from">Marina</span>${esc(PAIN_REPLY)}</p>
+      </div>
+    </li>`;
 
-  /* ---- Featured ---- */
-  $("#feat-grid").innerHTML = FEATURED.map((f, i) => {
-    const real = isRealLink(f.link);
-    const metric = countMarkup({ value: f.metric, prefix: f.prefix, suffix: f.suffix }, "feat-metric");
-    return `
-      <a class="feat-card reveal d${i + 1}" href="${esc(f.link || "#")}" ${real ? 'target="_blank" rel="noopener"' : ""}
-         aria-label="${esc(f.client)}: ${esc(f.title)}. Watch the post${real ? " (opens in a new tab)" : ""}">
-        ${mediaMarkup(f.cover, f.format, f.client + " content cover", "feat-cover").replace("</div>", '<span class="play" aria-hidden="true"></span></div>')}
-        <div class="feat-body">
-          ${metric}
-          <div class="feat-label">${esc(f.metricLabel)}</div>
-          <div class="feat-client">${esc(f.client)}</div>
-          <h3 class="feat-title">${esc(f.title)}</h3>
-          <p class="feat-context">${esc(f.context)}</p>
-          <div class="feat-open" aria-hidden="true">watch it here &rarr;</div>
-        </div>
-      </a>`;
-  }).join("");
+  /* Bubbles drift towards the mouse and spring back when it leaves */
+  const chat = $("#chat");
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (!reduceMotion && canHover) {
+    const movers = $$(".bubble-move", chat);
+    let px = 0, py = 0, frame = 0;
+    const update = () => {
+      frame = 0;
+      movers.forEach((m) => {
+        const r = m.getBoundingClientRect();
+        const dx = px - (r.left + r.width / 2);
+        const dy = py - (r.top + r.height / 2);
+        const reach = Math.max(r.width, 260);
+        const pull = Math.max(0, 1 - Math.hypot(dx, dy) / reach);
+        const depth = parseFloat(m.dataset.depth);
+        m.style.transform = `translate(${(dx * 0.14 * pull * depth).toFixed(1)}px, ${(dy * 0.22 * pull * depth).toFixed(1)}px) rotate(${(dx * 0.012 * pull).toFixed(2)}deg)`;
+      });
+    };
+    $(".pain").addEventListener("pointermove", (e) => {
+      px = e.clientX; py = e.clientY;
+      if (!frame) frame = requestAnimationFrame(update);
+    });
+    $(".pain").addEventListener("pointerleave", () => movers.forEach((m) => { m.style.transform = ""; }));
+  }
+  /* On phones a tap gives the bubble a little bounce */
+  chat.addEventListener("click", (e) => {
+    const b = e.target.closest(".bubble");
+    if (!b || reduceMotion) return;
+    b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
+  });
 
-  /* ---- Work by niche with filters ---- */
+  /* ---- Client work: filters + swipeable feeds ---- */
+  const niches = [...new Set(WORK.map((w) => w.niche))];
   const filterWrap = $("#filters");
-  filterWrap.innerHTML = ["All"].concat(NICHES).map((n, i) =>
+  filterWrap.innerHTML = ["All"].concat(niches).map((n, i) =>
     `<button class="filter-btn" type="button" data-filter="${esc(n)}" aria-pressed="${i === 0}">${esc(n)}</button>`).join("");
-  $("#work-grid").innerHTML = WORK.map((w) => {
-    const media = mediaMarkup(w.cover, w.format, w.client + ", " + w.title);
-    const inner = `${media}<div class="work-meta"><span class="work-niche">${esc(w.niche)}</span><h3 class="work-client">${esc(w.client)}</h3><p class="work-title">${esc(w.title)}</p></div>`;
-    return `<li class="work-item" data-niche="${esc(w.niche)}">${isRealLink(w.link) ? `<a href="${esc(w.link)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block">${inner}</a>` : inner}</li>`;
+  const postMock = (w) => `
+        <div class="post-mock">
+          <div class="post-head">
+            <span class="post-avatar" aria-hidden="true">${esc(w.client.charAt(0))}</span>
+            <span class="post-name">${esc(w.client)}</span>
+            <span class="post-more" aria-hidden="true">&middot;&middot;&middot;</span>
+          </div>
+          <div class="post-slides" tabindex="0" role="group" aria-label="${esc(w.client)} posts. Scroll sideways to see more.">
+            ${w.posts.map((im) => `<img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" width="800" height="1000">`).join("")}
+          </div>
+          <div class="post-foot">
+            <button class="post-arrow" type="button" data-dir="-1" aria-label="Previous post">&lsaquo;</button>
+            <span class="post-pips" aria-hidden="true">${w.posts.map((_, j) => `<i${j === 0 ? ' class="on"' : ""}></i>`).join("")}</span>
+            <button class="post-arrow" type="button" data-dir="1" aria-label="Next post">&rsaquo;</button>
+          </div>
+        </div>`;
+  const phoneMock = (w) => `
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-screen">
+              <img class="phone-pane" data-pane="feed" src="${esc(w.phone.feed)}" alt="${esc(w.phone.feedAlt)}" loading="lazy">
+              ${w.phone.reel ? `<video class="phone-pane fit-${esc(w.phone.fit || "cover")}" data-pane="reel" hidden muted loop playsinline preload="none" poster="${esc(w.phone.poster || "")}" aria-label="${esc(w.phone.reelAlt)}"><source src="${esc(w.phone.reel)}" type="video/mp4"></video>
+              <button class="sound-btn" type="button" hidden aria-pressed="false">Sound on</button>` : ""}
+            </div>
+          </div>
+          ${w.phone.reel ? `<div class="phone-tabs" role="group" aria-label="Show feed or reel">
+            <button type="button" data-show="feed" aria-pressed="true">Feed</button>
+            <button type="button" data-show="reel" aria-pressed="false">Reel</button>
+          </div>` : ""}
+        </div>`;
+  const screenMock = (w) => `
+        <div class="screen-mock">
+          <div class="screen-bar" aria-hidden="true"><i></i><i></i><i></i><span>${esc(w.screen.label || "")}</span></div>
+          <video class="auto-video" muted loop playsinline preload="none" poster="${esc(w.screen.poster)}" aria-label="${esc(w.screen.alt)}"><source src="${esc(w.screen.video)}" type="video/mp4"></video>
+        </div>`;
+  $("#work-list").innerHTML = WORK.map((w, i) => {
+    const parts = [w.phone ? phoneMock(w) : "", w.posts ? postMock(w) : "", w.screen ? screenMock(w) : ""].join("");
+    const kind = w.screen ? " wide" : (w.phone && w.posts ? " duo" : "");
+    return `
+    <li class="case-card reveal${kind}${i % 2 ? " flip" : ""}" data-niche="${esc(w.niche)}">
+      <div class="media-stage">${parts}</div>
+      <div class="case-copy">
+        <span class="work-niche">${esc(w.niche)}</span>
+        <h3 class="case-name">${esc(w.client)}</h3>
+        <p class="case-summary">${esc(w.summary)}</p>
+        <dl class="case-meta">
+          <div><dt>Service</dt><dd>${esc(w.service)}</dd></div>
+          <div><dt>Focus</dt><dd>${esc(w.focus)}</dd></div>
+          <div><dt>Platform</dt><dd>${esc(w.platform)}</dd></div>
+        </dl>
+        ${isRealLink(w.link) ? `<a class="step-cta" href="${esc(w.link)}" target="_blank" rel="noopener">See their feed <span aria-hidden="true">&rarr;</span></a>` : ""}
+      </div>
+    </li>`;
   }).join("");
   filterWrap.addEventListener("click", (e) => {
     const btn = e.target.closest(".filter-btn");
     if (!btn) return;
     const niche = btn.dataset.filter;
     $$(".filter-btn", filterWrap).forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
-    $$(".work-item").forEach((item) => { item.hidden = !(niche === "All" || item.dataset.niche === niche); });
+    let n = 0;
+    $$(".case-card").forEach((card) => {
+      const show = niche === "All" || card.dataset.niche === niche;
+      card.hidden = !show;
+      if (show) { card.classList.toggle("flip", n % 2 === 1); card.classList.add("in"); n++; }
+    });
   });
+  /* Arrows and dots for each feed */
+  $$(".post-mock").forEach((mock) => {
+    const track = $(".post-slides", mock);
+    const pips = $$(".post-pips i", mock);
+    $$(".post-arrow", mock).forEach((b) => b.addEventListener("click", () => {
+      track.scrollBy({ left: track.clientWidth * Number(b.dataset.dir), behavior: reduceMotion ? "auto" : "smooth" });
+    }));
+    track.addEventListener("scroll", () => {
+      const idx = Math.round(track.scrollLeft / track.clientWidth);
+      pips.forEach((p, j) => p.classList.toggle("on", j === idx));
+    }, { passive: true });
+  });
+
+  /* Phone: switch between the feed screenshot and the reel */
+  $$(".phone-wrap").forEach((wrap) => {
+    const video = $("video", wrap);
+    const sound = $(".sound-btn", wrap);
+    $$(".phone-tabs button", wrap).forEach((b) => b.addEventListener("click", () => {
+      const show = b.dataset.show;
+      $$(".phone-tabs button", wrap).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      $$(".phone-pane", wrap).forEach((pane) => { pane.hidden = pane.dataset.pane !== show; });
+      if (!video) return;
+      sound.hidden = show !== "reel";
+      if (show === "reel") { video.play().catch(() => {}); } else { video.pause(); }
+    }));
+    if (sound) sound.addEventListener("click", () => {
+      video.muted = !video.muted;
+      sound.setAttribute("aria-pressed", String(!video.muted));
+      sound.textContent = video.muted ? "Sound on" : "Sound off";
+    });
+  });
+  /* Landscape videos play only while on screen (saves data), and never with reduced motion */
+  const autoVideos = $$(".auto-video");
+  if (reduceMotion) {
+    autoVideos.forEach((v) => { v.controls = true; });
+  } else if ("IntersectionObserver" in window) {
+    const vio = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) e.target.play().catch(() => {}); else e.target.pause();
+    }), { threshold: 0.4 });
+    autoVideos.forEach((v) => vio.observe(v));
+  }
+  /* A reel stops when it scrolls away */
+  if ("IntersectionObserver" in window) {
+    const rio = new IntersectionObserver((entries) => entries.forEach((e) => { if (!e.isIntersecting) e.target.pause(); }), { threshold: 0 });
+    $$(".phone video").forEach((v) => rio.observe(v));
+  }
 
   /* ---- Ticker (list is doubled for a seamless loop) ---- */
   const tickerList = TICKER.map((t) => `<li>${esc(t)}</li>`).join("");
@@ -1161,28 +1335,27 @@ const CAPTURE_DELAY_MS = 7000;
   $("#services-grid").innerHTML = SERVICES.map((s, i) => {
     const num = String(i + 1).padStart(2, "0");
     const extra = s.feature ? `
-      <ul class="packages">${PACKAGES.map((p) => `<li><span><span class="pkg-name">${esc(p.name)}</span><span class="pkg-note">${esc(p.note)}</span></span><span class="pkg-price">${esc(p.price)}</span></li>`).join("")}</ul>
-      <button class="btn btn-gold" type="button" data-open-guide>Get the pricing guide</button>` : "";
-    return `<li class="service reveal d${(i % 3) + 1}${s.feature ? " feature on-dark" : ""}">
+      <ul class="packages">${PACKAGES.map((p) => `<li><a class="pkg-link" href="packages.html#${esc(p.id)}"><span><span class="pkg-name">${esc(p.name)}</span><span class="pkg-note">${esc(p.note)}</span></span><span class="pkg-arrow" aria-hidden="true">&rarr;</span></a></li>`).join("")}</ul>
+      <a class="btn btn-gold" href="packages.html">See what's inside each package</a>` : "";
+    const cta = s.cta ? `<a class="step-cta" href="${esc(links.call)}"${/^https?:/.test(links.call) ? ' target="_blank" rel="noopener"' : ""}>Book now <span aria-hidden="true">&rarr;</span></a>` : "";
+    if (s.feature) {
+      return `<li class="service feature on-dark reveal">
+        <div class="feature-copy">
+          <span class="service-num" aria-hidden="true">${num}</span>
+          <h3><span class="sr-only">${num}. </span>${esc(s.title)}</h3>
+          <p>${esc(s.text)}</p>
+        </div>
+        <div class="feature-list">${extra}</div>
+      </li>`;
+    }
+    return `<li class="service reveal d${(i % 4) + 1}">
       <span class="service-num" aria-hidden="true">${num}</span>
       <h3><span class="sr-only">${num}. </span>${esc(s.title)}</h3>
-      <p>${esc(s.text)}</p>${extra}
+      <p>${esc(s.text)}</p>${cta}
     </li>`;
   }).join("");
 
-  /* ---- Results: metrics, before and after, testimonials ---- */
-  $("#metrics").innerHTML = METRICS.map((m, i) =>
-    `<li class="metric reveal d${(i % 3) + 1}">${countMarkup(m, "num")}<span class="lbl">${esc(m.label)}</span></li>`).join("");
-  $("#cases").innerHTML = RESULTS.map((r, i) => `
-    <li class="case reveal d${i + 1}">
-      <h4 class="case-client">${esc(r.client)}</h4>
-      <div class="case-niche">${esc(r.niche)}</div>
-      <dl>
-        <div class="case-step"><dt>The challenge</dt><dd>${esc(r.challenge)}</dd></div>
-        <div class="case-step"><dt>What we did</dt><dd>${esc(r.did)}</dd></div>
-        <div class="case-step after"><dt>What changed</dt><dd>${esc(r.changed)}</dd></div>
-      </dl>
-    </li>`).join("");
+  /* ---- Testimonials ---- */
   $("#testimonials").innerHTML = TESTIMONIALS.map((t, i) => `
     <li class="reveal d${(i % 2) + 1}">
       <figure class="testimonial">
