@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sign in | The Gemini Social</title>
+<meta name="theme-color" content="#294268">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --cream: #F9F3ED; --cream-2: #F1E6DA; --navy: #294268; --navy-soft: #4A5F80; --gold: #DF982E; --white: #fff; --red: #B3261E; --red-bg: #FBE9E7; --green: #2E6B3F; --green-bg: #E6F2E8; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { background: var(--cream); color: var(--navy); font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5; display: grid; place-items: center; min-height: 100vh; padding: 24px 16px; }
+body.checking .card { visibility: hidden; }
+.card { width: 100%; max-width: 380px; background: var(--white); border-radius: 20px; padding: 32px 28px 26px; box-shadow: 0 18px 40px -20px rgba(41, 66, 104, .35); }
+.logo { display: block; width: 150px; height: auto; margin: 0 auto 18px; }
+h1 { font-size: 1.15rem; font-weight: 600; text-align: center; margin: 0 0 4px; }
+.sub { text-align: center; color: var(--navy-soft); font-size: .9rem; margin: 0 0 22px; }
+label { display: block; font-weight: 500; font-size: .88rem; margin-bottom: 6px; }
+input { width: 100%; font: inherit; color: var(--navy); background: var(--cream); border: 1.5px solid rgba(41, 66, 104, .22); border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; }
+input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(223, 152, 46, .35); }
+button { width: 100%; font: inherit; font-weight: 600; border: 0; border-radius: 999px; padding: 12px 18px; background: var(--navy); color: var(--cream); cursor: pointer; margin-top: 4px; }
+button:hover { background: #1F3452; }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.link { display: block; text-align: center; margin-top: 16px; font-size: .88rem; color: var(--navy); background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; width: auto; margin-inline: auto; font-weight: 500; }
+.link:hover { background: none; color: var(--gold); }
+.banner { border-radius: 12px; padding: 10px 14px; font-size: .88rem; margin-bottom: 16px; display: none; }
+.banner.show { display: block; }
+.banner.error { background: var(--red-bg); color: var(--red); }
+.banner.ok { background: var(--green-bg); color: var(--green); }
+.view[hidden] { display: none; }
+.back { display: block; text-align: center; margin-top: 18px; font-size: .82rem; color: var(--navy-soft); }
+</style>
+</head>
+<body class="checking">
+
+<main class="card">
+  <img class="logo" src="../media/logo.png" alt="The Gemini Social" width="1665" height="910">
+  <div class="banner" id="banner" role="alert" aria-live="assertive"></div>
+
+  <!-- Sign in -->
+  <section class="view" id="view-signin" aria-labelledby="t-signin">
+    <h1 id="t-signin">Sign in</h1>
+    <p class="sub">Your admin for The Gemini Social</p>
+    <form id="signin-form" novalidate>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button type="submit" id="signin-btn">Sign in</button>
+    </form>
+    <button type="button" class="link" id="forgot-link">Forgot my password</button>
+  </section>
+
+  <!-- Choose a new password (after clicking the email link) -->
+  <section class="view" id="view-reset" aria-labelledby="t-reset" hidden>
+    <h1 id="t-reset">Choose a new password</h1>
+    <p class="sub">At least 8 characters.</p>
+    <form id="reset-form" novalidate>
+      <label for="new-password">New password</label>
+      <input id="new-password" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="new-password-2">Type it again</label>
+      <input id="new-password-2" type="password" autocomplete="new-password" minlength="8" required>
+      <button type="submit" id="reset-btn">Save new password</button>
+    </form>
+  </section>
+
+  <a class="back" href="../">&larr; Back to thegeminisocial.com</a>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../js/db.js"></script>
+<script>
+(function () {
+  "use strict";
+  var ADMIN = "../admin/";
+  var banner = document.getElementById("banner");
+  function show(msg, kind) { banner.textContent = msg; banner.className = "banner show " + (kind || "error"); }
+  function clear() { banner.className = "banner"; banner.textContent = ""; }
+  function reveal() { document.body.classList.remove("checking"); }
+  function showView(id) {
+    document.getElementById("view-signin").hidden = id !== "signin";
+    document.getElementById("view-reset").hidden = id !== "reset";
+  }
+
+  var db = window.db;
+  if (!db) {
+    reveal();
+    show("We couldn't connect right now. Please check your internet connection and refresh the page.");
+    return;
+  }
+
+  // Arriving from the "reset your password" email
+  var isRecovery = /type=recovery/.test(location.hash) || /type=recovery/.test(location.search);
+  db.auth.onAuthStateChange(function (event) {
+    if (event === "PASSWORD_RECOVERY") { isRecovery = true; showView("reset"); reveal(); }
+  });
+
+  if (isRecovery) {
+    showView("reset");
+    reveal();
+  } else {
+    // Already signed in? Go straight to the admin.
+    db.auth.getSession().then(function (res) {
+      if (res && res.data && res.data.session && !isRecovery) { location.replace(ADMIN); return; }
+      reveal();
+      document.getElementById("email").focus();
+    }, function () { reveal(); });
+  }
+
+  // Sign in
+  document.getElementById("signin-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    clear();
+    var email = document.getElementById("email").value.trim();
+    var password = document.getElementById("password").value;
+    if (!email || !password) { show("Please type your email and password."); return; }
+    var btn = document.getElementById("signin-btn");
+    btn.disabled = true; btn.textContent = "Signing in...";
+    db.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
+      if (res.error) {
+        var m = (res.error.message || "").toLowerCase();
+        if (m.indexOf("confirm") > -1) show("Please confirm your email address first, then try again.");
+        else if (m.indexOf("fetch") > -1 || m.indexOf("network") > -1) show("We couldn't reach the server. Please check your connection and try again.");
+        else show("Incorrect email or password");
+        btn.disabled = false; btn.textContent = "Sign in";
+        return;
+      }
+      location.replace(ADMIN);
+    }, function () {
+      show("We couldn't reach the server. Please check your connection and try again.");
+      btn.disabled = false; btn.textContent = "Sign in";
+    });
+  });
+
+  // Forgot my password
+  document.getElementById("forgot-link").addEventListener("click", function () {
+    clear();
+    var email = document.getElementById("email").value.trim();
+    if (!email) { show("Type your email above first, then click \"Forgot my password\" again."); document.getElementById("email").focus(); return; }
+    var back = location.origin + location.pathname.replace(/index\.html$/, "");
+    db.auth.resetPasswordForEmail(email, { redirectTo: back }).then(function () {
+      show("If that email has an account, a link to reset your password is on its way. Check your inbox.", "ok");
+    }, function () {
+      show("We couldn't send the email right now. Please try again in a minute.");
+    });
+  });
+
+  // Save the new password
+  document.getElementById("reset-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    clear();
+    var p1 = document.getElementById("new-password").value;
+    var p2 = document.getElementById("new-password-2").value;
+    if (p1.length < 8) { show("Please use at least 8 characters."); return; }
+    if (p1 !== p2) { show("The two passwords don't match."); return; }
+    var btn = document.getElementById("reset-btn");
+    btn.disabled = true;
+    db.auth.updateUser({ password: p1 }).then(function (res) {
+      if (res.error) { show("That link has expired. Please ask for a new one from the sign in screen."); btn.disabled = false; return; }
+      show("Password saved. Taking you to your admin...", "ok");
+      setTimeout(function () { location.replace(ADMIN); }, 900);
+    }, function () { show("We couldn't save it right now. Please try again."); btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>
