@@ -423,6 +423,23 @@ section { position: relative; }
 }
 @media (hover: none) { .pain-hint { display: none; } }
 
+/* ---------- Free guide banner (Content Pillar Builder) ---------- */
+.guide-banner { margin: clamp(48px, 7vw, 80px) auto 0; max-width: 960px; display: grid; grid-template-columns: 260px 1fr; gap: clamp(24px, 4vw, 48px); align-items: center; background: var(--navy); color: var(--cream); border-radius: var(--radius-lg); padding: clamp(28px, 4vw, 44px) clamp(24px, 5vw, 56px); box-shadow: var(--shadow); text-align: center; }
+.guide-banner-pages { position: relative; display: block; width: 190px; aspect-ratio: 700 / 906; margin: 0 auto; }
+.guide-banner-pages img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; box-shadow: 0 14px 30px -12px rgba(0, 0, 0, .55); transition: transform .4s ease; }
+.gb-back { transform: rotate(8deg) translate(16%, 2%) scale(.92); }
+.gb-front { transform: rotate(-4deg); }
+.guide-banner:hover .gb-back { transform: rotate(11deg) translate(22%, 0) scale(.92); }
+.guide-banner-eyebrow { font-family: var(--hand); font-size: 1.4rem; color: var(--gold); margin: 0 0 4px; }
+.guide-banner h3 { font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin-bottom: 12px; }
+.guide-banner p { color: #D9E0EA; max-width: 520px; margin-inline: auto; }
+.guide-banner .btn { margin-top: 6px; }
+.guide-banner .btn-gold:focus-visible { outline-color: var(--gold); outline-offset: 4px; }
+@media (max-width: 760px) {
+  .guide-banner { grid-template-columns: 1fr; }
+  .guide-banner-pages { width: 150px; margin-bottom: 8px; }
+}
+
 /* ---------- Client work (swipeable feeds) ---------- */
 .work .obj-camera { right: 4%; top: 10px; position: absolute; }
 .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: clamp(36px, 5vw, 56px); }
@@ -434,15 +451,25 @@ section { position: relative; }
 }
 .filter-btn:hover { border-color: var(--navy); }
 .filter-btn[aria-pressed="true"] { background: var(--navy); color: var(--cream); border-color: var(--navy); }
-.case-list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(40px, 6vw, 72px); }
-.case-card { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: center; justify-content: center; }
-.case-card.wide { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+/* One client at a time, slides left and right */
+.case-list { list-style: none; margin: 0; padding: 8px 2px 18px; display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-x: contain; }
+.case-list::-webkit-scrollbar { display: none; }
+.case-card { flex: 0 0 100%; scroll-snap-align: start; display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center; justify-content: center; background: rgba(255, 255, 255, .55); border-radius: 32px; padding: clamp(20px, 3.5vw, 44px); box-shadow: var(--shadow-soft); }
+.case-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 10px; }
+.case-arrow { width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid rgba(41, 66, 104, .3); background: var(--white); color: var(--navy); font-size: 1.8rem; line-height: 1; cursor: pointer; transition: background-color .2s ease, color .2s ease; }
+.case-arrow:hover { background: var(--navy); color: var(--cream); border-color: var(--navy); }
+.case-arrow:disabled { opacity: .35; cursor: default; background: var(--white); color: var(--navy); }
+.case-dots { display: flex; gap: 8px; }
+.case-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: rgba(41, 66, 104, .25); cursor: pointer; transition: transform .2s ease, background-color .2s ease; }
+.case-dots button[aria-current="true"] { background: var(--gold); transform: scale(1.3); }
+.case-count { text-align: center; font-family: var(--hand); font-size: 1.3rem; margin: 8px 0 0; }
+.case-card.wide { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
 .media-stage { display: flex; justify-content: center; align-items: center; position: relative; }
 .media-stage .post-mock { max-width: 360px; }
 .duo .media-stage .phone-wrap { z-index: 1; margin-right: -46px; transform: rotate(-4deg); }
-.duo .media-stage .post-mock { z-index: 2; max-width: 300px; transform: rotate(3deg); }
+.duo .media-stage .post-mock { z-index: 2; max-width: 280px; transform: rotate(3deg); }
 .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; flex: none; }
-.phone { width: 236px; aspect-ratio: 9 / 19.5; background: var(--navy); border-radius: 38px; padding: 9px; box-shadow: var(--shadow); position: relative; }
+.phone { width: 214px; aspect-ratio: 9 / 19.5; background: var(--navy); border-radius: 38px; padding: 9px; box-shadow: var(--shadow); position: relative; }
 .phone::before { content: ""; position: absolute; top: 15px; left: 50%; width: 64px; height: 18px; margin-left: -32px; border-radius: 12px; background: var(--navy); z-index: 2; }
 .phone-screen { position: relative; width: 100%; height: 100%; border-radius: 30px; overflow: hidden; background: #DADADA; }
 .phone-pane { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
@@ -479,10 +506,10 @@ section { position: relative; }
 .post-pips i.on { background: var(--navy); transform: scale(1.2); }
 .case-copy { text-align: center; max-width: 560px; justify-self: center; }
 .work-niche { display: inline-block; font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--cream-2); padding: 5px 12px; border-radius: 999px; margin-bottom: 12px; }
-.case-name { font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 14px; }
-.case-summary { color: var(--navy-soft); margin-bottom: 22px; }
-.case-meta { display: grid; gap: 10px; margin: 0 0 8px; }
-.case-meta div { background: var(--white); border-radius: 14px; padding: 10px 16px; box-shadow: var(--shadow-soft); }
+.case-name { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-bottom: 12px; }
+.case-summary { color: var(--navy-soft); margin-bottom: 18px; font-size: 1rem; }
+.case-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 8px; }
+.case-meta div { background: var(--white); border-radius: 14px; padding: 10px 12px; box-shadow: var(--shadow-soft); font-size: .9rem; }
 .case-meta dt { font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--navy-soft); }
 .case-meta dd { margin: 2px 0 0; font-weight: 500; }
 
@@ -674,7 +701,8 @@ section { position: relative; }
   .hero-photo { width: min(80%, 380px); margin-top: 8px; }
   .about-photo { width: min(80%, 360px); }
   .work .obj-camera, .services .obj-note { display: none; }
-  .case-card, .case-card.flip, .case-card.wide, .case-card.wide.flip { grid-template-columns: 1fr; }
+  .case-card, .case-card.flip, .case-card.wide, .case-card.wide.flip { grid-template-columns: 1fr; align-content: start; }
+  .case-meta { grid-template-columns: 1fr; }
   .case-card.flip .media-stage { order: 0; }
   .section-head { flex-direction: column; align-items: flex-start; }
 }
@@ -693,9 +721,26 @@ section { position: relative; }
   .form-row { grid-template-columns: 1fr; gap: 0; }
   .hero-actions .btn { width: 100%; }
   .hero-photo, .about-photo { width: 88%; }
-  .duo .media-stage { flex-direction: column; gap: 24px; }
-  .duo .media-stage .phone-wrap, .duo .media-stage .post-mock, .duo .phone-tabs { margin: 0; transform: none; }
-  .phone { width: 220px; }
+  /* Phone and posts side by side, smaller, so each slide stays short */
+  .duo .media-stage .phone-wrap { margin-right: -30px; transform: rotate(-3deg); }
+  .duo .media-stage .post-mock { max-width: 190px; transform: rotate(3deg); padding: 8px 8px 4px; border-radius: 18px; }
+  .duo .phone-tabs { transform: rotate(3deg); }
+  .phone { width: 168px; border-radius: 28px; padding: 6px; }
+  .duo .phone { width: 148px; }
+  .phone::before { top: 10px; width: 44px; height: 12px; margin-left: -22px; }
+  .phone-screen { border-radius: 23px; }
+  .phone-tabs button { padding: 6px 12px; font-size: .82rem; min-height: 34px; }
+  .post-head { padding: 2px 4px 8px; gap: 8px; }
+  .post-avatar { width: 26px; height: 26px; font-size: .9rem; }
+  .post-name { font-size: .8rem; }
+  .post-arrow { width: 34px; height: 34px; font-size: 1.5rem; }
+  .media-stage .post-mock { max-width: 260px; }
+  .case-card { padding: 18px 14px 22px; border-radius: 26px; }
+  .case-summary { font-size: .95rem; }
+  /* Featured content swipes sideways on phones too */
+  .feed-grid, .feed-grid.featured { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 14px; justify-content: flex-start; padding: 4px 4px 14px; margin: 0 -4px; scrollbar-width: none; }
+  .feed-grid::-webkit-scrollbar { display: none; }
+  .feed-card { flex: 0 0 68%; scroll-snap-align: center; }
   .testimonial blockquote { font-size: 1.3rem; }
   .modal-card { padding: 36px 20px 24px; }
 }
@@ -855,6 +900,20 @@ section { position: relative; }
     </div>
     <!-- Messages come from PAIN_POINTS and PAIN_REPLY in the script -->
     <ul class="chat" id="chat" aria-label="Common social media struggles"></ul>
+
+    <!-- FREE GUIDE: links to the Content Pillar Builder landing page -->
+    <aside class="guide-banner reveal" aria-labelledby="guide-banner-title">
+      <a class="guide-banner-pages" href="content-pillars.html" tabindex="-1" aria-hidden="true">
+        <img class="gb-back" src="media/guide-exercise.jpg" alt="" width="700" height="906" loading="lazy">
+        <img class="gb-front" src="media/guide-cover.jpg" alt="" width="700" height="906" loading="lazy">
+      </a>
+      <div class="guide-banner-copy">
+        <p class="guide-banner-eyebrow">Free guide</p>
+        <h3 id="guide-banner-title">Not sure what to post? Start with your <em>content pillars</em></h3>
+        <p>A short guided reflection to find the three themes you want to be known for, so content stops feeling like guesswork.</p>
+        <a class="btn btn-gold" href="content-pillars.html">Get the free Content Pillar Builder &#10022;</a>
+      </div>
+    </aside>
   </div>
 </section>
 
@@ -880,7 +939,15 @@ section { position: relative; }
       <div class="feed-group" id="gallery-group"><p class="feed-label">More from the feed</p><ul class="feed-grid" id="gallery-grid"></ul></div>
     </div>
     <!-- Client stories are built from WORK in the script -->
-    <ul class="case-list" id="work-list" aria-live="polite"></ul>
+    <div class="case-slider" role="region" aria-roledescription="carousel" aria-label="Client work">
+      <ul class="case-list" id="work-list"></ul>
+      <div class="case-nav">
+        <button class="case-arrow" type="button" id="case-prev" aria-label="Previous client">&lsaquo;</button>
+        <div class="case-dots" id="case-dots"></div>
+        <button class="case-arrow" type="button" id="case-next" aria-label="Next client">&rsaquo;</button>
+      </div>
+      <p class="case-count" id="case-count" aria-live="polite"></p>
+    </div>
   </div>
 </section>
 
@@ -957,7 +1024,7 @@ section { position: relative; }
       </div>
 
       <aside class="contact-side reveal d1" aria-label="Other ways to reach me">
-        <img class="side-photo" src="media/marina-desk.jpg" alt="Marina's hands typing on a laptop, with a coffee cup and notebook" width="1400" height="933" loading="lazy">
+        <img class="side-photo" src="media/marina-typing.jpg" alt="Marina's hands typing on a laptop by the window" width="800" height="1200" loading="lazy" style="object-position: 50% 62%">
         <h3>Prefer a quick <em>chat</em>?</h3>
         <p>Pick whatever's easiest for you. A discovery call is free and takes about 60 minutes.</p>
         <div class="contact-links">
@@ -1314,7 +1381,7 @@ const CAPTURE_DELAY_MS = 7000;
     const parts = [w.phone ? phoneMock(w) : "", w.posts ? postMock(w) : "", w.screen ? screenMock(w) : ""].join("");
     const kind = w.screen ? " wide" : (w.phone && w.posts ? " duo" : "");
     return `
-    <li class="case-card reveal${kind}${i % 2 ? " flip" : ""}" data-niche="${esc(w.niche)}">
+    <li class="case-card${kind}" data-niche="${esc(w.niche)}" role="group" aria-roledescription="slide" aria-label="${esc(w.client)}">
       <div class="media-stage">${parts}</div>
       <div class="case-copy">
         <span class="work-niche">${esc(w.niche)}</span>
@@ -1335,8 +1402,9 @@ const CAPTURE_DELAY_MS = 7000;
     $$(".case-card").forEach((card) => {
       const show = activeNiche === "All" || card.dataset.niche === activeNiche;
       card.hidden = !show;
-      if (show) { card.classList.toggle("flip", n % 2 === 1); card.classList.add("in"); n++; }
+      if (show) n++;
     });
+    buildDots();
     ["featured", "gallery"].forEach((g) => {
       const cards = $$("#" + g + "-grid .feed-card");
       let shown = 0;
@@ -1388,6 +1456,55 @@ const CAPTURE_DELAY_MS = 7000;
       showFeed(rows);
     }, fallback);
   })();
+  /* ---- Client work slider: arrows, dots and swipe ---- */
+  function visibleCards() { return $$(".case-card", $("#work-list")).filter((c) => !c.hidden); }
+  function currentIndex() {
+    const cards = visibleCards();
+    let best = 0, bestDist = Infinity;
+    cards.forEach((c, i) => { const d = Math.abs(c.offsetLeft - $("#work-list").offsetLeft - $("#work-list").scrollLeft); if (d < bestDist) { bestDist = d; best = i; } });
+    return best;
+  }
+  function goTo(i) {
+    const cards = visibleCards();
+    if (!cards.length) return;
+    i = Math.max(0, Math.min(cards.length - 1, i));
+    $("#work-list").scrollTo({ left: cards[i].offsetLeft - $("#work-list").offsetLeft, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+  function updateNav() {
+    const cards = visibleCards(), i = currentIndex();
+    $$("#case-dots button").forEach((d, k) => d.setAttribute("aria-current", String(k === i)));
+    $("#case-prev").disabled = i === 0;
+    $("#case-next").disabled = i >= cards.length - 1;
+    $("#case-count").textContent = cards.length ? (cards[i].getAttribute("aria-label") + "  \u2726  " + (i + 1) + " of " + cards.length) : "";
+    const nav = $(".case-nav");
+    nav.hidden = cards.length < 2;
+  }
+  function buildDots() {
+    const cards = visibleCards();
+    $("#case-dots").innerHTML = cards.map((c, k) => `<button type="button" aria-label="Show ${esc(c.getAttribute("aria-label"))}"></button>`).join("");
+    const list = $("#work-list");
+    list.style.scrollBehavior = "auto";
+    list.scrollLeft = 0;
+    list.style.scrollBehavior = "";
+    updateNav();
+  }
+  const track = $("#work-list");
+  $("#case-dots").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    goTo($$("#case-dots button").indexOf(b));
+  });
+  $("#case-prev").addEventListener("click", () => goTo(currentIndex() - 1));
+  $("#case-next").addEventListener("click", () => goTo(currentIndex() + 1));
+  let navTimer;
+  track.addEventListener("scroll", () => { clearTimeout(navTimer); navTimer = setTimeout(updateNav, 80); }, { passive: true });
+  track.addEventListener("keydown", (e) => {
+    if (e.target !== track) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); goTo(currentIndex() + 1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); goTo(currentIndex() - 1); }
+  });
+  window.addEventListener("resize", () => goTo(currentIndex()));
+  buildDots();
+
   /* Arrows and dots for each feed */
   $$(".post-mock").forEach((mock) => {
     const track = $(".post-slides", mock);
