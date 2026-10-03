@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content Pillar Builder | Free Guide from The Gemini Social</title>
+<meta name="description" content="A free guided reflection to help you reconnect with your core message, find your three content pillars and create content with renewed intention.">
+<meta name="theme-color" content="#294268">
+<!-- How the page looks when shared on social media -->
+<meta property="og:title" content="Content Pillar Builder | Free Guide">
+<meta property="og:description" content="Find the three themes you want to be known for, so content stops feeling like guesswork.">
+<meta property="og:image" content="media/guide-cover.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* Same colours and fonts as index.html */
+:root {
+  --cream: #F9F3ED;
+  --cream-2: #F1E6DA;
+  --white: #FFFFFF;
+  --navy: #294268;
+  --navy-2: #1F3452;
+  --navy-soft: #4A5F80;
+  --gold: #DF982E;
+  --gold-soft: #F4DDB6;
+  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --hand: "Caveat", "Segoe Script", cursive;
+  --radius-lg: 28px;
+  --shadow: 0 18px 40px -20px rgba(41, 66, 104, .35);
+  --shadow-soft: 0 6px 20px -10px rgba(41, 66, 104, .25);
+  --gutter: 24px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--cream); scroll-behavior: smooth; overflow-x: clip; }
+body { margin: 0; color: var(--navy); font-family: var(--sans); font-weight: 300; font-size: 1.0625rem; line-height: 1.7; overflow-x: clip; -webkit-font-smoothing: antialiased; text-align: center; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .09;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .26 0 0 0 0 .41 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; line-height: 1.05; margin: 0; letter-spacing: -.01em; }
+h1 em, h2 em { font-style: italic; }
+p { margin: 0 0 1em; }
+a { color: inherit; }
+img { display: block; max-width: 100%; height: auto; }
+:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; border-radius: 6px; }
+.on-dark :focus-visible { outline-color: var(--gold); }
+.wrap { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: var(--gutter); }
+.eyebrow { font-family: var(--hand); font-size: 1.5rem; line-height: 1.2; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.eyebrow::before { content: "\2726"; color: var(--gold); font-size: 1rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 14px 28px; border-radius: 999px; border: 2px solid transparent; font-family: var(--sans); font-size: 1.02rem; font-weight: 600; line-height: 1.2; text-decoration: none; cursor: pointer; transition: transform .25s ease, background-color .25s ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn-gold { background: var(--gold); color: var(--navy); box-shadow: 0 10px 24px -12px rgba(223, 152, 46, .9); }
+.btn-gold:hover { background: #E8A640; }
+.btn-gold:focus-visible { outline-color: var(--navy); }
+
+/* Top bar */
+.topbar { padding: 18px 0; }
+.topbar .wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+.topbar a { text-decoration: none; }
+.topbar .brand { font-family: var(--serif); font-size: 1.45rem; }
+.topbar .brand em { font-style: italic; }
+.topbar .back { font-size: .95rem; padding: 8px 14px; border-radius: 999px; }
+.topbar .back:hover { background: var(--cream-2); }
+
+/* Hero */
+.hero { padding: clamp(16px, 4vw, 48px) 0 clamp(64px, 9vw, 112px); }
+.hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 80px); align-items: center; }
+.hero-logo { width: min(240px, 60%); margin: 0 auto 18px; }
+.hero h1 { font-size: clamp(3rem, 7vw, 5.2rem); margin-bottom: 14px; }
+.hero .lead { font-size: clamp(1.1rem, 1.8vw, 1.25rem); max-width: 520px; margin: 0 auto 14px; font-weight: 400; }
+.hero .intro { color: var(--navy-soft); max-width: 520px; margin: 0 auto 28px; }
+
+/* Guide mockup: fanned pages */
+.guide { position: relative; width: min(100%, 420px); margin: 0 auto; aspect-ratio: 700 / 906; }
+.guide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; box-shadow: var(--shadow); background: var(--white); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.guide .p3 { transform: rotate(9deg) translate(16%, 2%) scale(.9); }
+.guide .p2 { transform: rotate(-8deg) translate(-15%, 3%) scale(.9); }
+.guide .p1 { transform: rotate(-1deg); }
+.guide:hover .p3 { transform: rotate(13deg) translate(24%, 0) scale(.9); }
+.guide:hover .p2 { transform: rotate(-12deg) translate(-23%, 1%) scale(.9); }
+.free-stamp { position: absolute; z-index: 3; right: -18px; top: -22px; width: 108px; height: 108px; border-radius: 50%; background: var(--navy); color: var(--gold); display: grid; place-items: center; box-shadow: 0 0 0 4px var(--cream), 0 0 0 5px rgba(223, 152, 46, .6), var(--shadow); transform: rotate(10deg); }
+.free-stamp strong { display: block; font-family: var(--serif); font-size: 2rem; font-weight: 400; line-height: 1; }
+.free-stamp span { display: block; font-size: .68rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--cream); }
+
+/* Sign-up form */
+.signup { background: var(--white); border-radius: var(--radius-lg); padding: clamp(24px, 4vw, 36px); box-shadow: var(--shadow); max-width: 480px; margin: 0 auto; }
+.signup h2 { font-size: clamp(1.8rem, 3.5vw, 2.3rem); margin-bottom: 8px; }
+.signup > p, .signup form > p { color: var(--navy-soft); font-size: .98rem; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; text-align: left; }
+.field label { font-weight: 500; font-size: .95rem; }
+.field input { width: 100%; font: inherit; font-weight: 400; color: var(--navy); background: var(--cream); border: 1.5px solid rgba(41, 66, 104, .25); border-radius: 14px; padding: 13px 16px; min-height: 52px; }
+.field input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 4px rgba(223, 152, 46, .35); }
+.field input::placeholder { color: #7A889E; }
+.signup .btn { width: 100%; margin-top: 4px; }
+.fine-print { font-size: .82rem; color: var(--navy-soft); margin: 14px 0 0; }
+.hp { position: absolute; left: -5000px; }
+.thanks { display: none; padding: 10px 0; }
+.thanks.show { display: block; animation: fadeUp .5s ease both; }
+.thanks .big-star { width: 56px; height: 56px; margin: 0 auto 14px; background: var(--gold); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.thanks h2 em { font-style: italic; }
+.thanks a { font-weight: 600; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } }
+
+/* Why it matters */
+.why { background: var(--navy); color: var(--cream); padding: clamp(64px, 9vw, 104px) 0; }
+.why .eyebrow { color: var(--cream); }
+.why h2 { font-size: clamp(2.4rem, 5.5vw, 3.8rem); margin-bottom: 18px; }
+.why p { max-width: 680px; margin-inline: auto; color: #D9E0EA; font-size: 1.1rem; }
+.why .quote { font-family: var(--serif); font-style: italic; font-size: clamp(1.35rem, 2.6vw, 2rem); line-height: 1.25; color: var(--cream); margin: 28px auto 0; max-width: none; }
+@media (min-width: 761px) { .why .quote { white-space: nowrap; } }
+.why .quote::before, .why .quote::after { content: "\2726"; color: var(--gold); font-style: normal; font-size: .7em; margin: 0 12px; vertical-align: middle; }
+
+footer { background: var(--navy-2); color: #D9E0EA; padding: 28px 0; font-size: .92rem; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; }
+footer a { color: var(--cream); }
+footer .hand { font-family: var(--hand); font-size: 1.3rem; color: var(--cream); }
+
+.js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s cubic-bezier(.2, .7, .2, 1); }
+.js .reveal.in { opacity: 1; transform: none; }
+
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .guide { width: min(58%, 300px); margin-block: 18px 8px; }
+  .hero-logo { display: none; }
+}
+@media (max-width: 640px) {
+  :root { --gutter: 16px; }
+  .topbar .back span { display: none; }
+  .free-stamp { width: 86px; height: 86px; right: -10px; top: -16px; }
+  .free-stamp strong { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="back" href="index.html">&larr; <span>Visit the website</span></a>
+  </div>
+</header>
+
+<main>
+  <!-- ================= HERO + SIGN-UP ================= -->
+  <section class="hero" aria-labelledby="page-title">
+    <div class="wrap hero-grid">
+      <div class="guide reveal" aria-hidden="true">
+        <img class="p3" src="media/guide-pillars.jpg" alt="" width="700" height="906">
+        <img class="p2" src="media/guide-exercise.jpg" alt="" width="700" height="906">
+        <img class="p1" src="media/guide-cover.jpg" alt="" width="700" height="906">
+        <div class="free-stamp"><div><strong>Free</strong><span>6 page guide</span></div></div>
+      </div>
+
+      <div class="hero-copy">
+        <img class="hero-logo" src="media/logo.png" alt="The Gemini Social" width="1665" height="910">
+        <p class="eyebrow">Free guide</p>
+        <h1 id="page-title">Content Pillar <em>Builder</em></h1>
+        <p class="lead">A guided reflection to help you reconnect with your core message and create content with renewed intention.</p>
+        <p class="intro">If you've found your way here, chances are you're ready to pause and take a fresh look at your content. This guide is your invitation to step out of the noise, revisit what really matters in your message and reconnect with the themes you want to be known for.</p>
+
+        <div class="signup" id="get-the-guide">
+          <!-- MAILING LIST: see FORM_ACTION in the script at the bottom of this page -->
+          <form id="signup-form" novalidate>
+            <h2>Get your free <em>copy</em></h2>
+            <p>Pop your details below and I'll send the Content Pillar Builder straight to your inbox.</p>
+            <div class="field"><label for="fname">First name</label><input id="fname" name="FNAME" type="text" autocomplete="given-name" required placeholder="Your first name"></div>
+            <div class="field"><label for="email">Email</label><input id="email" name="EMAIL" type="email" autocomplete="email" required placeholder="you@yourbusiness.com"></div>
+            <!-- Spam trap: real people never see or fill this -->
+            <div class="hp" aria-hidden="true"><input type="text" name="b_website" tabindex="-1" autocomplete="off"></div>
+            <button class="btn btn-gold" type="submit">Send me the guide &#10022;</button>
+            <p class="fine-print">No spam. Just thoughtful resources and occasional updates. You can unsubscribe at any time.</p>
+          </form>
+          <div class="thanks" id="thanks" role="status" aria-live="polite" tabindex="-1">
+            <div class="big-star" aria-hidden="true"></div>
+            <h2>It's on its <em>way</em>!</h2>
+            <p>Check your inbox in the next few minutes. If you can't see it, have a peek in your promotions or spam folder.</p>
+            <p>While you wait, <a href="index.html#work">see the content I create for my clients</a>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHY IT MATTERS ================= -->
+  <section class="why on-dark" aria-labelledby="why-title">
+    <div class="wrap reveal">
+      <p class="eyebrow">Why content pillars?</p>
+      <h2 id="why-title">Stop guessing what to <em>post</em></h2>
+      <p>Content pillars are the three or so themes you want your business to be known for. When you know what they are, content stops feeling like guesswork and starts feeling intentional. Your audience begins to recognise your voice, connect with your perspective and trust the work you do.</p>
+      <p class="quote">Your pillars are already in you. We're just uncovering them.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; <span id="year"></span> The Gemini Social</span>
+    <a href="index.html">thegeminisocial.com</a>
+    <a href="https://www.instagram.com/thegeminisocial/" target="_blank" rel="noopener">@thegeminisocial</a>
+    <span class="hand">made with strategy + heart</span>
+  </div>
+</footer>
+
+<!-- Hidden frame so the form can send to your email platform without leaving the page -->
+<iframe name="signup-target" title="Form submission" hidden></iframe>
+
+<script>
+/* =====================================================================
+   MAILING LIST CONNECTION
+   FORM_ACTION: paste the "action" link from your email platform's
+   embedded sign-up form, between the quotes.
+
+   Mailchimp: Audience > Signup forms > Embedded forms. In the code it
+   gives you, copy the link inside action="..." It looks like:
+   https://xxxx.us21.list-manage.com/subscribe/post?u=...&id=...
+   The fields here are already named EMAIL and FNAME, which is what
+   Mailchimp expects. Then set up a Mailchimp welcome email that sends
+   the guide automatically.
+
+   While it's "", the form only shows the thank-you message and
+   NOTHING is saved or sent.
+   ===================================================================== */
+const FORM_ACTION = "";
+
+(function () {
+  "use strict";
+  document.documentElement.classList.add("js");
+  const form = document.getElementById("signup-form");
+  const thanks = document.getElementById("thanks");
+
+  if (FORM_ACTION) {
+    form.action = FORM_ACTION;
+    form.method = "post";
+    form.target = "signup-target";
+  }
+
+  form.addEventListener("submit", (e) => {
+    if (!form.checkValidity()) { e.preventDefault(); form.reportValidity(); return; }
+    if (form.elements.b_website.value) { e.preventDefault(); return; } // bot
+    if (!FORM_ACTION) e.preventDefault();
+    setTimeout(() => {
+      form.style.display = "none";
+      thanks.classList.add("show");
+      thanks.focus();
+    }, FORM_ACTION ? 400 : 0);
+  });
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const items = document.querySelectorAll(".reveal");
+  if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    items.forEach((el) => el.classList.add("in"));
+  } else {
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }), { threshold: 0.1 });
+    items.forEach((el) => io.observe(el));
+  }
+})();
+</script>
+<!-- Anonymous visit counter for your admin's Portfolio tab -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/visit.js"></script>
+</body>
+</html>

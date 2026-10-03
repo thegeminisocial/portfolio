@@ -357,10 +357,13 @@ section { position: relative; }
 
 
 /* ---------- About ---------- */
-.about-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(40px, 7vw, 96px); align-items: center; }
+.about-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(40px, 7vw, 96px); align-items: start; }
 .about-photo { position: relative; width: min(100%, 400px); justify-self: center; }
+@media (min-width: 961px) { .about-photo { position: sticky; top: calc(var(--header-h) + 32px); } }
+.about-photo .polaroid-second { width: 70%; margin: -6px -8% 0 auto; transform: rotate(4deg); z-index: 2; }
+.polaroid-img.landscape { aspect-ratio: 3 / 2; }
 .about-photo .polaroid { transform: rotate(-2.5deg); }
-.about-photo .obj-coffee { right: -46px; bottom: -30px; }
+.about-photo .obj-coffee { left: -40px; bottom: 40px; }
 .about-photo .obj-camera { left: -40px; top: -20px; }
 .about h2 { font-size: clamp(2.6rem, 5.6vw, 4.2rem); margin-bottom: 24px; }
 .about-copy p { max-width: 600px; }
@@ -483,6 +486,28 @@ section { position: relative; }
 .case-meta dt { font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--navy-soft); }
 .case-meta dd { margin: 2px 0 0; font-weight: 500; }
 
+/* ---------- Featured content (from the admin) ---------- */
+.feed-block { margin-bottom: clamp(48px, 7vw, 80px); }
+.feed-group + .feed-group { margin-top: clamp(32px, 5vw, 48px); }
+.feed-label { font-family: var(--hand); font-size: 1.6rem; text-align: center; margin: 0 0 18px; }
+.feed-grid { list-style: none; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 220px)); justify-content: center; gap: 20px; }
+.feed-grid.featured { grid-template-columns: repeat(auto-fit, minmax(220px, 320px)); gap: 26px; }
+.feed-card[hidden] { display: none; }
+.feed-card > a, .feed-card > div { display: flex; flex-direction: column; height: 100%; background: var(--white); border-radius: 22px; padding: 10px 10px 16px; box-shadow: var(--shadow-soft); text-decoration: none; color: var(--navy); text-align: center; transition: transform .3s ease, box-shadow .3s ease; }
+.feed-card > a:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+.feed-cover { position: relative; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: var(--cream-2); }
+.feed-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.feed-format { position: absolute; left: 10px; top: 10px; background: rgba(249, 243, 237, .94); color: var(--navy); font-size: .74rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; }
+.feed-play { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(249, 243, 237, .94); }
+.feed-play::after { content: ""; position: absolute; left: 22px; top: 17px; border-style: solid; border-width: 11px 0 11px 17px; border-color: transparent transparent transparent var(--navy); }
+.feed-body { padding: 14px 6px 0; }
+.feed-highlight { font-family: var(--serif); font-size: 1.7rem; line-height: 1; margin-bottom: 6px; }
+.feed-title { font-weight: 500; line-height: 1.35; margin: 0 0 4px; }
+.feed-client { font-size: .78rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--navy-soft); }
+.hp { position: absolute !important; left: -5000px; width: 1px; height: 1px; overflow: hidden; }
+.send-error { color: #B3261E; background: #FBE5E2; border-radius: 12px; padding: 10px 14px; font-size: .92rem; margin: 12px 0 0; text-align: center; }
+.send-error a { color: inherit; font-weight: 600; }
+
 /* ---------- Ticker ---------- */
 .ticker { background: var(--navy); color: var(--cream); overflow: hidden; padding: 18px 0; }
 .ticker-track { display: flex; width: max-content; animation: ticker 40s linear infinite; }
@@ -572,8 +597,9 @@ section { position: relative; }
 .footer-brand em { font-style: italic; }
 .footer-grid p { margin: 8px 0 0; color: #D9E0EA; }
 .socials { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; margin: 0; padding: 0; }
-.socials a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(249, 243, 237, .35); text-decoration: none; font-size: .95rem; min-height: 44px; }
-.socials a:hover { background: rgba(249, 243, 237, .1); }
+.socials a { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgba(249, 243, 237, .35); color: var(--cream); text-decoration: none; transition: background-color .2s ease, color .2s ease, transform .2s ease; }
+.socials a:hover { background: var(--gold); border-color: var(--gold); color: var(--navy); transform: translateY(-2px); }
+.socials svg { width: 22px; height: 22px; }
 .footer-bottom { margin-top: 40px; padding-top: 22px; border-top: 1px solid rgba(249, 243, 237, .15); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: .9rem; color: #C9D2DF; }
 .footer-bottom .hand { font-family: var(--hand); font-size: 1.3rem; color: var(--cream); }
 
@@ -639,7 +665,7 @@ section { position: relative; }
 @media (max-width: 1100px) {
   .float { transform: scale(.8); }
   .hero-photo .obj-phone { left: -56px; }
-  .about-photo .obj-coffee { right: -20px; }
+  .about-photo .obj-coffee { left: -20px; }
   .services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .service.feature { grid-template-columns: 1fr; }
 }
@@ -786,6 +812,11 @@ section { position: relative; }
         <img class="polaroid-img" src="media/marina-about.jpg" alt="Marina Lira standing by a bookshelf" width="800" height="1000" loading="lazy" style="object-position: 50% 25%">
         <p class="polaroid-note">strategy + creativity</p>
       </div>
+      <div class="polaroid polaroid-second">
+        <!-- SECOND PHOTO: to change it, put a new photo in the media folder and change the src below -->
+        <img class="polaroid-img landscape" src="media/marina-desk.jpg" alt="Marina's hands on a laptop keyboard, planning content" width="1400" height="933" loading="lazy">
+        <p class="polaroid-note">behind the scenes</p>
+      </div>
       <div class="float obj-camera" aria-hidden="true"><span class="cam-lens"></span></div>
       <div class="float obj-coffee" aria-hidden="true"><span class="latte"></span></div>
     </div>
@@ -841,6 +872,13 @@ section { position: relative; }
       <div class="float obj-camera" aria-hidden="true"><span class="cam-lens"></span></div>
     </div>
     <div class="filters reveal" id="filters" role="group" aria-label="Filter work by niche"></div>
+    <!-- FEATURED CONTENT: comes from the Portfolio tab of your admin (the portfolio_items table).
+         Change it in the admin and the site updates by itself. If the database can't be reached,
+         or has no visible items yet, FALLBACK_ITEMS in the script is shown instead. -->
+    <div class="feed-block" id="feed-block" hidden>
+      <div class="feed-group" id="featured-group"><p class="feed-label">Featured content</p><ul class="feed-grid featured" id="featured-grid"></ul></div>
+      <div class="feed-group" id="gallery-group"><p class="feed-label">More from the feed</p><ul class="feed-grid" id="gallery-grid"></ul></div>
+    </div>
     <!-- Client stories are built from WORK in the script -->
     <ul class="case-list" id="work-list" aria-live="polite"></ul>
   </div>
@@ -894,11 +932,9 @@ section { position: relative; }
 
     <div class="contact-grid">
       <div class="contact-form reveal">
-        <!-- FORM: this page is static, so the form only shows a confirmation.
-             To receive messages, create a free form at formspree.io (or similar),
-             then add action="https://formspree.io/f/YOUR_ID" method="POST" to the <form>
-             and see the note in the script (search for "FORM SENDING"). -->
+        <!-- FORM: each message is saved to the Leads tab of your admin (status "Lead", source "Contact form") -->
         <form id="contact-form" novalidate>
+          <div class="hp" aria-hidden="true"><label for="c-website">Leave this empty</label><input id="c-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
           <div class="form-row">
             <div class="field"><label for="c-name">Name</label><input id="c-name" name="name" type="text" autocomplete="name" required placeholder="Your name"></div>
             <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" autocomplete="email" required placeholder="you@yourbusiness.com"></div>
@@ -910,6 +946,7 @@ section { position: relative; }
           <div class="field"><label for="c-message">Message</label><textarea id="c-message" name="message" required placeholder="What's going on with your socials right now, and what would you love to change?"></textarea></div>
           <button class="btn btn-gold" type="submit">Send my message <span class="star" aria-hidden="true">&#10022;</span></button>
           <p class="form-note">No pressure and no hard sell. Just a friendly chat about your business.</p>
+          <p class="send-error" id="contact-error" role="alert" hidden>Sorry, your message didn't go through. Please try again, or email me at <a href="mailto:thegeminisocialco@gmail.com">thegeminisocialco@gmail.com</a>.</p>
         </form>
         <div class="confirm" id="contact-confirm" role="status" aria-live="polite" tabindex="-1">
           <div class="big-star" aria-hidden="true"></div>
@@ -954,10 +991,18 @@ section { position: relative; }
         <p>Based on the Sunshine Coast, working with businesses everywhere</p>
       </div>
       <ul class="socials" aria-label="Social links">
-        <li><a href="#" data-link="instagram" target="_blank" rel="noopener">Instagram</a></li>
-        <li><a href="#" data-link="facebook" target="_blank" rel="noopener">Facebook</a></li>
-        <li><a href="#" data-link="email">Email</a></li>
-        <li><a href="#" data-link="website" target="_blank" rel="noopener">thegeminisocial.com</a></li>
+        <li><a href="#" data-link="instagram" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>
+        </a></li>
+        <li><a href="#" data-link="facebook" target="_blank" rel="noopener" aria-label="Facebook" title="Facebook">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.5-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21h3z"/></svg>
+        </a></li>
+        <li><a href="#" data-link="email" aria-label="Email" title="Email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>
+        </a></li>
+        <li><a href="#" data-link="linkedin" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.9 8.8H3.8V20h3.1V8.8zM5.35 3.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zM20.2 13.6c0-3-1.6-5-4.4-5-1.5 0-2.5.8-2.9 1.6V8.8H9.9V20H13v-5.9c0-1.5.6-2.6 2-2.6 1.3 0 2 1 2 2.6V20h3.2v-6.4z"/></svg>
+        </a></li>
       </ul>
     </div>
     <div class="footer-bottom">
@@ -976,10 +1021,12 @@ section { position: relative; }
     <p class="eyebrow">Free guide</p>
     <h2 id="capture-title">Want my packages and pricing <em>guide</em>?</h2>
     <form id="capture-form" novalidate>
+      <div class="hp" aria-hidden="true"><input name="website" type="text" tabindex="-1" autocomplete="off" aria-label="Leave this empty"></div>
       <p>Pop your details in and I'll send it straight to your inbox. No spam, just the good stuff.</p>
       <div class="field"><label for="g-name">Name</label><input id="g-name" name="name" type="text" autocomplete="name" required placeholder="Your name"></div>
       <div class="field"><label for="g-email">Email</label><input id="g-email" name="email" type="email" autocomplete="email" required placeholder="you@yourbusiness.com"></div>
       <button class="btn btn-gold" type="submit">Send it to me</button>
+      <p class="send-error" id="capture-error" role="alert" hidden>Sorry, that didn't go through. Please try again, or email me at <a href="mailto:thegeminisocialco@gmail.com">thegeminisocialco@gmail.com</a>.</p>
     </form>
     <div class="confirm" id="capture-confirm" role="status" aria-live="polite" tabindex="-1">
       <div class="big-star" aria-hidden="true"></div>
@@ -990,21 +1037,24 @@ section { position: relative; }
   </div>
 </div>
 
+<!-- Database connection (Supabase), then your settings in js/db.js -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/db.js"></script>
 <script>
 /* =====================================================================
    EDIT YOUR CONTENT HERE
    Everything below in CAPITALS is plain data. Change the text between
    the quotes and save. You don't need to touch the HTML above.
-   Placeholders to replace:
-   FACEBOOK_LINK.
+   All placeholders have been replaced.
    ===================================================================== */
 
 /* ---- Contact details and links ---- */
 const CONTACT = {
   email: "thegeminisocialco@gmail.com",
   instagram: "thegeminisocial",              // without the @
-  facebook: "FACEBOOK_LINK",                 // paste your full Facebook page link
+  facebook: "https://www.facebook.com/thegeminisocial",   // your Facebook page
   discoveryCall: "https://calendar.app.google/nwmQoBqqzS6sE1ut8",   // your booking link
+  linkedin: "https://www.linkedin.com/in/marinamouraolira/",
   website: "https://thegeminisocial.com"
 };
 
@@ -1096,6 +1146,16 @@ const WORK = [
   }
 ];
 
+/* ---- Featured content: FALLBACK ONLY ----
+   Your featured content now comes from the Portfolio tab of your admin.
+   This short list only shows if the database can't be reached, or if
+   you have no visible items there yet, so the section never looks empty. */
+const FALLBACK_ITEMS = [
+  { title: "Reasons strength training is non-negotiable for women over 40", client: "JPB Fitness", niche: "Fitness and Wellness", format: "Carousel", cover_url: "media/jpb-post-1.jpg", featured: true, highlight: "", link: "" },
+  { title: "What actually makes a class challenging", client: "Wildling Pilates Studio", niche: "Fitness and Wellness", format: "Carousel", cover_url: "media/wildling-1.jpg", featured: true, highlight: "", link: "" },
+  { title: "How much deposit do you actually need?", client: "Shari Smith", niche: "Property", format: "Carousel", cover_url: "media/shari-1.jpg", featured: true, highlight: "", link: "" }
+];
+
 /* ---- Monthly packages (shown inside service 06).
    Each one links to packages.html, where the full details live. id must match the id there. ---- */
 const PACKAGES = [
@@ -1150,6 +1210,7 @@ const CAPTURE_DELAY_MS = 7000;
     email: "mailto:" + CONTACT.email,
     instagram: "https://www.instagram.com/" + CONTACT.instagram + "/",
     facebook: CONTACT.facebook === "FACEBOOK_LINK" ? "#" : CONTACT.facebook,
+    linkedin: CONTACT.linkedin,
     website: CONTACT.website
   };
   $$("[data-link]").forEach((a) => {
@@ -1268,18 +1329,65 @@ const CAPTURE_DELAY_MS = 7000;
       </div>
     </li>`;
   }).join("");
-  filterWrap.addEventListener("click", (e) => {
-    const btn = e.target.closest(".filter-btn");
-    if (!btn) return;
-    const niche = btn.dataset.filter;
-    $$(".filter-btn", filterWrap).forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+  let activeNiche = "All";
+  function applyFilter() {
     let n = 0;
     $$(".case-card").forEach((card) => {
-      const show = niche === "All" || card.dataset.niche === niche;
+      const show = activeNiche === "All" || card.dataset.niche === activeNiche;
       card.hidden = !show;
       if (show) { card.classList.toggle("flip", n % 2 === 1); card.classList.add("in"); n++; }
     });
+    ["featured", "gallery"].forEach((g) => {
+      const cards = $$("#" + g + "-grid .feed-card");
+      let shown = 0;
+      cards.forEach((c) => { const show = activeNiche === "All" || c.dataset.niche === activeNiche; c.hidden = !show; if (show) shown++; });
+      $("#" + g + "-group").hidden = shown === 0;
+    });
+    const block = $("#feed-block");
+    if (block.dataset.ready) block.hidden = $$(".feed-card:not([hidden])", block).length === 0;
+  }
+  filterWrap.addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-btn");
+    if (!btn) return;
+    activeNiche = btn.dataset.filter;
+    $$(".filter-btn", filterWrap).forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+    applyFilter();
   });
+
+  /* ---- Featured content: read from the database, fall back to FALLBACK_ITEMS ---- */
+  const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "";
+  const safeImg = (u) => (/^https?:\/\//i.test(u || "") || /^[\w./-]+\.(jpe?g|png|webp|gif|avif)$/i.test(u || "")) ? u : "";
+  function feedCard(x) {
+    const link = safeUrl(x.link), img = safeImg(x.cover_url);
+    const inner = `<div class="feed-cover">${img ? `<img src="${esc(img)}" alt="${esc((x.client ? x.client + ": " : "") + x.title)}" loading="lazy">` : ""}${x.format ? `<span class="feed-format">${esc(x.format)}</span>` : ""}${x.format === "Reel" ? '<span class="feed-play" aria-hidden="true"></span>' : ""}</div>
+      <div class="feed-body">${x.highlight ? `<div class="feed-highlight">${esc(x.highlight)}</div>` : ""}<p class="feed-title">${esc(x.title)}</p>${x.client ? `<div class="feed-client">${esc(x.client)}</div>` : ""}</div>`;
+    return `<li class="feed-card" data-niche="${esc(x.niche || "")}">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener" aria-label="${esc(x.title)}${x.client ? ", " + esc(x.client) : ""} (opens in a new tab)">${inner}</a>` : `<div>${inner}</div>`}</li>`;
+  }
+  function showFeed(items) {
+    const featured = items.filter((x) => x.featured), rest = items.filter((x) => !x.featured);
+    $("#featured-grid").innerHTML = featured.map(feedCard).join("");
+    $("#gallery-grid").innerHTML = rest.map(feedCard).join("");
+    // Add any new niches from the admin to the filter buttons
+    const known = $$(".filter-btn", filterWrap).map((b) => b.dataset.filter);
+    [...new Set(items.map((x) => x.niche).filter(Boolean))].forEach((nch) => {
+      if (known.indexOf(nch) === -1) filterWrap.insertAdjacentHTML("beforeend", `<button class="filter-btn" type="button" data-filter="${esc(nch)}" aria-pressed="false">${esc(nch)}</button>`);
+    });
+    $("#feed-block").dataset.ready = "1";
+    applyFilter();
+  }
+  (function loadFeed() {
+    let done = false;
+    const fallback = () => { if (!done) { done = true; showFeed(FALLBACK_ITEMS); } };
+    if (!window.db) { fallback(); return; }
+    setTimeout(fallback, 6000); // never wait forever
+    window.db.from("portfolio_items").select("*").eq("visible", true).order("position", { ascending: true }).then((res) => {
+      if (done) return;
+      const rows = (res && !res.error && res.data ? res.data : []).filter((x) => !x.is_example && x.title);
+      if (!rows.length) { fallback(); return; }
+      done = true;
+      showFeed(rows);
+    }, fallback);
+  })();
   /* Arrows and dots for each feed */
   $$(".post-mock").forEach((mock) => {
     const track = $(".post-slides", mock);
@@ -1428,11 +1536,14 @@ const CAPTURE_DELAY_MS = 7000;
     counters.forEach((el) => countIO.observe(el));
   }
 
-  /* ---- Contact form: confirmation on the page ----
-     FORM SENDING: once you have a Formspree (or similar) endpoint on the <form>,
-     replace the "showConfirm" line below with:
-       fetch(form.action, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" } })
-         .then(() => showConfirm());                                                                      */
+  /* ---- Saving a new lead to your Leads list (contacts table) ---- */
+  function saveLead(lead) {
+    if (!window.db) return Promise.resolve(false);
+    return window.db.from("contacts").insert(lead).then((res) => !res.error, () => false);
+  }
+  const clip = (v, max) => (v || "").trim().slice(0, max) || null;
+
+  /* ---- Contact form: saves to your Leads, then shows the thank-you ---- */
   const form = $("#contact-form");
   const confirmBox = $("#contact-confirm");
   const showConfirm = () => {
@@ -1443,8 +1554,23 @@ const CAPTURE_DELAY_MS = 7000;
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!form.checkValidity()) { form.reportValidity(); return; }
-    showConfirm();
-    form.reset();
+    $("#contact-error").hidden = true;
+    if (form.elements.website.value) { showConfirm(); form.reset(); return; } // spam bot
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    saveLead({
+      name: clip(form.elements.name.value, 200),
+      email: clip(form.elements.email.value, 320),
+      business: clip(form.elements.business.value, 200),
+      instagram: clip(form.elements.instagram.value, 200),
+      notes: clip(form.elements.message.value, 5000),
+      status: "Lead",
+      source: "Contact form"
+    }).then((ok) => {
+      btn.disabled = false;
+      if (ok) { showConfirm(); form.reset(); }
+      else $("#contact-error").hidden = false;
+    });
   });
   $("#contact-again").addEventListener("click", () => {
     confirmBox.classList.remove("show");
@@ -1493,13 +1619,27 @@ const CAPTURE_DELAY_MS = 7000;
   captureForm.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!captureForm.checkValidity()) { captureForm.reportValidity(); return; }
-    captureForm.style.display = "none";
-    captureConfirm.classList.add("show");
-    captureConfirm.focus();
+    const done = () => { captureForm.style.display = "none"; captureConfirm.classList.add("show"); captureConfirm.focus(); };
+    $("#capture-error").hidden = true;
+    if (captureForm.elements.website.value) { done(); return; } // spam bot
+    const btn = captureForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    saveLead({
+      name: clip(captureForm.elements.name.value, 200),
+      email: clip(captureForm.elements.email.value, 320),
+      notes: "Asked for the packages and pricing guide",
+      status: "Lead",
+      source: "Pricing guide"
+    }).then((ok) => {
+      btn.disabled = false;
+      if (ok) done(); else $("#capture-error").hidden = false;
+    });
   });
   $$("[data-open-guide]").forEach((b) => b.addEventListener("click", openModal));
   if (!seen()) setTimeout(() => { if (!seen()) openModal(); }, CAPTURE_DELAY_MS);
 })();
 </script>
+<!-- Anonymous visit counter for your admin's Portfolio tab -->
+<script src="js/visit.js"></script>
 </body>
 </html>
