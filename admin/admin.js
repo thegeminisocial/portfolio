@@ -120,7 +120,7 @@
     var code = (error && error.code) || "";
     var msg = (error && error.message) || "";
     if (code === "PGRST205" || code === "42P01" || /could not find the table/i.test(msg) || (/relation/i.test(msg) && /does not exist/i.test(msg))) {
-      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run db.sql to create it. Everything else keeps working.");
+      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "inspiration" ? "db-inspiration.sql" : "db.sql") + " to create it. Everything else keeps working.");
       return "missing";
     }
     if (code === "PGRST204" || code === "42703" || /column/i.test(msg)) {
@@ -375,12 +375,14 @@
     calendar: { title: "Calendar", render: renderCalendar },
     results: { title: "Results", render: renderResults },
     checklists: { title: "Checklists", render: renderChecklists },
-    numbers: { title: "My numbers", render: renderNumbers }
+    numbers: { title: "My numbers", render: renderNumbers },
+    inspiration: { title: "Inspiration", render: renderInspiration }
   };
   var current = "portfolio";
   var renderId = 0;
   function go(tab) {
     if (!TABS[tab]) tab = "portfolio";
+    if (tab === "inspiration" && typeof insState !== "undefined") { insState.view = "grid"; insState.id = null; }
     current = tab;
     $$("#nav button").forEach(function (b) {
       if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
@@ -1185,6 +1187,327 @@
         if (!del.classList.contains("confirm")) { del.classList.add("confirm"); del.textContent = "Click again to delete"; return; }
         write(db.from("my_numbers").delete().eq("id", row.id), "my_numbers", "Month deleted").then(function (ok) { if (ok) refresh(); });
       });
+    });
+  }
+
+
+  /* =================================================================
+     8. INSPIRATION (my content)
+     Videos you like, with their transcript, your notes and "My version".
+     ================================================================= */
+  var INS_FORMATS = ["Reel", "Short", "Long video"];
+  var INS_STATUS = ["Saved", "To adapt", "Used"];
+  var INS_STATUS_COLOUR = { "Saved": "navy", "To adapt": "gold", "Used": "green" };
+  var PLATFORM_COLOUR = { "YouTube": "red", "Instagram": "purple", "TikTok": "dark", "Other": "" };
+  var insState = { view: "grid", id: null, q: "", platform: "", pillar: "", status: "", fav: false, picked: {} };
+
+  function safeLink(url) { return /^https?:\/\//i.test(String(url || "").trim()) ? String(url).trim() : ""; }
+  function detectPlatform(url) {
+    var u; try { u = new URL(String(url || "").trim()); } catch (e) { return ""; }
+    var h = u.hostname.toLowerCase().replace(/^(www\.|m\.|vm\.|vt\.)/, "");
+    if (h === "youtu.be" || /(^|\.)youtube\.com$/.test(h)) return "YouTube";
+    if (h === "instagr.am" || /(^|\.)instagram\.com$/.test(h)) return "Instagram";
+    if (/(^|\.)tiktok\.com$/.test(h)) return "TikTok";
+    return "Other";
+  }
+  // Works out the official embed address for each platform, or null if it can't be embedded
+  function embedFor(url) {
+    var u; try { u = new URL(String(url || "").trim()); } catch (e) { return null; }
+    var p = detectPlatform(url), path = u.pathname, m;
+    if (p === "YouTube") {
+      var id = "";
+      if (/youtu\.be$/i.test(u.hostname)) id = path.split("/")[1] || "";
+      else if (u.searchParams.get("v")) id = u.searchParams.get("v");
+      else if ((m = path.match(/\/(shorts|live|embed)\/([\w-]{11})/))) id = m[2];
+      if (!/^[\w-]{11}$/.test(id)) return null;
+      return { src: "https://www.youtube-nocookie.com/embed/" + id, tall: /\/shorts\//.test(path) };
+    }
+    if (p === "Instagram" && (m = path.match(/\/(p|reel|reels|tv)\/([\w-]+)/))) {
+      return { src: "https://www.instagram.com/" + (m[1] === "p" ? "p" : "reel") + "/" + m[2] + "/embed/", tall: true, ig: true };
+    }
+    if (p === "TikTok" && (m = path.match(/\/video\/(\d+)/))) {
+      return { src: "https://www.tiktok.com/embed/v2/" + m[1], tall: true };
+    }
+    return null;
+  }
+  function guessCreator(url) {
+    var m = String(url || "").match(/\/(@[\w.\-]+)/);
+    return m ? m[1] : "";
+  }
+  function guessFormat(url) {
+    var p = detectPlatform(url);
+    if (p === "YouTube") return /\/shorts\//.test(url) ? "Short" : "Long video";
+    if (p === "Instagram" || p === "TikTok") return "Reel";
+    return "";
+  }
+  function tokscriptLink(url) { return "https://tokscript.com/" + String(url || "").trim().replace(/^https?:\/\//i, ""); }
+  // Removes timestamps like 00:01, [0:05], 00:00:01,000 --> 00:00:03,000 and subtitle numbers
+  var TIME = "\\d{1,2}:\\d{2}(?::\\d{2})?(?:[.,]\\d{1,3})?";
+  function hasTimestamps(t) { return new RegExp(TIME).test(t || ""); }
+  function cleanTranscript(t) {
+    var lines = String(t || "").replace(/\r/g, "").split("\n");
+    var out = [], para = [];
+    lines.forEach(function (line) {
+      if (/^\s*WEBVTT/i.test(line) || /^\s*\d+\s*$/.test(line)) return;
+      var l = line
+        .replace(new RegExp(TIME + "\\s*-->\\s*" + TIME, "g"), "")
+        .replace(new RegExp("[\\[(]?\\s*" + TIME + "\\s*[\\])]?\\s*[-\u2013:]?\\s*", "g"), "")
+        .replace(/\s+/g, " ").trim();
+      if (!l) { if (para.length) { out.push(para.join(" ")); para = []; } return; }
+      para.push(l);
+    });
+    if (para.length) out.push(para.join(" "));
+    return out.join("\n\n").trim();
+  }
+  function platformPill(p) { return p ? '<span class="pill ' + (PLATFORM_COLOUR[p] || "") + '">' + esc(p) + "</span>" : ""; }
+
+  function renderInspiration(root) {
+    return read("inspiration", function (q) { return q.order("created_at", { ascending: false }); }).then(function (r) {
+      var all = r.rows, missingTable = !r.ok;
+      var byId = {}; all.forEach(function (x) { byId[x.id] = x; });
+      if (insState.view === "detail" && byId[insState.id]) return drawDetail(root, byId[insState.id], all);
+      insState.view = "grid";
+      drawGrid(root, all, missingTable);
+    });
+  }
+
+  function drawGrid(root, all, missingTable) {
+    var pillars = all.map(function (x) { return x.pillar; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
+    function filtered() {
+      var q = insState.q.toLowerCase().replace(/^@/, "");
+      return all.filter(function (x) {
+        if (insState.platform && x.platform !== insState.platform) return false;
+        if (insState.pillar && x.pillar !== insState.pillar) return false;
+        if (insState.status && x.status !== insState.status) return false;
+        if (insState.fav && !x.favourite) return false;
+        if (!q) return true;
+        return [x.transcript, x.hook, x.notes, x.creator].some(function (v) { return v && String(v).toLowerCase().replace(/(^|\s)@/g, "$1").indexOf(q) > -1; });
+      });
+    }
+    var html = '<div class="toolbar"><div class="grow"><input type="search" id="ins-q" placeholder="Search transcripts, hooks, notes and creators" value="' + esc(insState.q) + '" aria-label="Search"></div>' +
+      '<select id="ins-platform" aria-label="Filter by platform"><option value="">All platforms</option>' + ["YouTube", "Instagram", "TikTok", "Other"].map(function (p) { return "<option" + (insState.platform === p ? " selected" : "") + ">" + p + "</option>"; }).join("") + "</select>" +
+      '<select id="ins-pillar" aria-label="Filter by pillar"><option value="">All pillars</option>' + pillars.map(function (p) { return '<option value="' + esc(p) + '"' + (insState.pillar === p ? " selected" : "") + ">" + esc(p) + "</option>"; }).join("") + "</select>" +
+      '<select id="ins-status" aria-label="Filter by status"><option value="">All statuses</option>' + INS_STATUS.map(function (s) { return "<option" + (insState.status === s ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select>" +
+      '<button type="button" class="btn' + (insState.fav ? " on-fav" : "") + '" id="ins-fav" aria-pressed="' + insState.fav + '">' + ICON.star + "Favourites</button></div>" +
+      '<div class="toolbar"><button type="button" class="btn primary" id="ins-add">' + ICON.plus + 'Add video</button><div class="grow"></div>' +
+      '<span class="muted" id="ins-picked-count"></span><button type="button" class="btn" id="ins-copy">' + ICON.copy + 'Copy for Claude</button><button type="button" class="btn" id="ins-csv">' + ICON.download + "Download</button></div>" +
+      '<div id="ins-list"></div>';
+    root.innerHTML = html;
+
+    function drawList() {
+      var list = filtered();
+      var box = $("#ins-list", root);
+      if (!all.length) {
+        box.innerHTML = '<div class="card"><p class="empty">' + (missingTable
+          ? "Your Inspiration list will appear here once the inspiration table is set up in Supabase (see the note at the top)."
+          : "This is your swipe file. Save videos you love from YouTube, Instagram and TikTok, paste their transcript, and note what makes them work and how you'd make your own version. Click \"Add video\" to save the first one.") + "</p></div>";
+      } else if (!list.length) {
+        box.innerHTML = '<div class="card"><p class="empty">No videos match your search or filters.</p></div>';
+      } else {
+        box.innerHTML = '<div class="ins-grid">' + list.map(function (x) {
+          var picked = !!insState.picked[x.id];
+          return '<article class="ins-card' + (picked ? " picked" : "") + '" data-id="' + esc(x.id) + '" tabindex="0" aria-label="' + esc((x.creator || "Video") + ": " + (x.hook || "")) + '">' +
+            '<div class="ins-top"><label class="ins-tick" title="Tick to include in Copy for Claude"><input type="checkbox" data-pick="' + esc(x.id) + '"' + (picked ? " checked" : "") + '><span class="sr-only">Select</span></label>' +
+            platformPill(x.platform) + exPill(x) + '<span class="grow"></span><button type="button" class="icon-btn' + (x.favourite ? " on" : "") + '" data-fav="' + esc(x.id) + '" aria-pressed="' + !!x.favourite + '" aria-label="' + (x.favourite ? "Remove from favourites" : "Add to favourites") + '">' + ICON.star + "</button></div>" +
+            '<div class="ins-creator">' + esc(x.creator || "Unknown creator") + "</div>" +
+            '<p class="ins-hook">' + (x.hook ? esc(x.hook) : '<span class="muted">No hook written yet</span>') + "</p>" +
+            '<div class="ins-meta">' + pill(x.status || "Saved", INS_STATUS_COLOUR[x.status || "Saved"]) + (x.format ? '<span class="muted">' + esc(x.format) + "</span>" : "") + (x.pillar ? '<span class="muted">' + esc(x.pillar) + "</span>" : "") + (x.transcript ? "" : '<span class="tag yellow">no transcript</span>') + "</div></article>";
+        }).join("") + "</div>";
+      }
+      var n = Object.keys(insState.picked).filter(function (k) { return insState.picked[k]; }).length;
+      $("#ins-picked-count", root).textContent = n ? n + " ticked" : "Tick videos to copy them";
+      $("#ins-copy", root).disabled = n === 0;
+    }
+    drawList();
+
+    $("#ins-q", root).addEventListener("input", function (e) { insState.q = e.target.value; drawList(); });
+    $("#ins-platform", root).addEventListener("change", function (e) { insState.platform = e.target.value; drawList(); });
+    $("#ins-pillar", root).addEventListener("change", function (e) { insState.pillar = e.target.value; drawList(); });
+    $("#ins-status", root).addEventListener("change", function (e) { insState.status = e.target.value; drawList(); });
+    $("#ins-fav", root).addEventListener("click", function (e) {
+      insState.fav = !insState.fav;
+      e.currentTarget.setAttribute("aria-pressed", String(insState.fav));
+      e.currentTarget.classList.toggle("on-fav", insState.fav);
+      drawList();
+    });
+    var byId = {}; all.forEach(function (x) { byId[x.id] = x; });
+    $("#ins-list", root).addEventListener("click", function (e) {
+      var pick = e.target.closest("[data-pick]");
+      if (pick) { insState.picked[pick.dataset.pick] = pick.checked; drawList(); return; }
+      if (e.target.closest(".ins-tick")) return;
+      var fav = e.target.closest("[data-fav]");
+      if (fav) {
+        var x = byId[fav.dataset.fav];
+        write(db.from("inspiration").update({ favourite: !x.favourite }).eq("id", x.id), "inspiration").then(function (ok) { if (ok) { x.favourite = !x.favourite; drawList(); } });
+        return;
+      }
+      var card = e.target.closest(".ins-card");
+      if (card) { insState.view = "detail"; insState.id = card.dataset.id; refresh(); window.scrollTo({ top: 0 }); }
+    });
+    $("#ins-list", root).addEventListener("keydown", function (e) {
+      var card = e.target.classList && e.target.classList.contains("ins-card") ? e.target : null;
+      if (card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); insState.view = "detail"; insState.id = card.dataset.id; refresh(); }
+    });
+
+    // Add video
+    $("#ins-add", root).addEventListener("click", function () {
+      openForm({
+        title: "Add video",
+        saveLabel: "Save video",
+        values: { status: "Saved" },
+        fields: [
+          { name: "link", label: "Paste the video link", type: "url", required: true, full: true, placeholder: "https://www.instagram.com/reel/...", help: "YouTube, Instagram or TikTok. The platform is detected by itself." },
+          { name: "creator", label: "Creator's @", placeholder: "@creator" },
+          { name: "format", label: "Format", type: "select", options: [{ value: "", label: "Choose..." }].concat(INS_FORMATS) },
+          { name: "hook", label: "Hook (the first line)", full: true },
+          { name: "pillar", label: "Content pillar", list: pillars },
+          { name: "status", label: "Status", type: "select", options: INS_STATUS }
+        ],
+        onSave: function (v) {
+          var link = safeLink(v.link);
+          if (!link) { $("#form-error").textContent = "Please paste a full link that starts with https://"; return Promise.resolve(false); }
+          v.link = link;
+          v.platform = detectPlatform(link) || "Other";
+          if (!v.creator) v.creator = guessCreator(link) || null;
+          if (v.creator && v.creator.charAt(0) !== "@") v.creator = "@" + v.creator;
+          if (!v.format) v.format = guessFormat(link) || null;
+          return Promise.resolve(db.from("inspiration").insert(v).select("id").single()).then(function (res) {
+            if (res.error) { explain(res.error, "inspiration"); toast("Couldn't save: " + (res.error.message || "please try again"), true); return false; }
+            toast("Video saved. Now add the transcript.");
+            insState.view = "detail"; insState.id = res.data && res.data.id;
+            return true;
+          }, function () { toast("Couldn't save, please try again.", true); return false; });
+        }
+      });
+      // Show the platform as soon as a link is pasted
+      var linkInput = $("#f-link"), help = linkInput && linkInput.parentNode.querySelector(".help");
+      if (linkInput && help) linkInput.addEventListener("input", function () {
+        var p = detectPlatform(linkInput.value);
+        help.innerHTML = p ? "Detected: " + platformPill(p) : "YouTube, Instagram or TikTok. The platform is detected by itself.";
+        var c = $("#f-creator"), f = $("#f-format");
+        if (c && !c.value) c.value = guessCreator(linkInput.value);
+        if (f && !f.value) f.value = guessFormat(linkInput.value);
+      });
+    });
+
+    // Copy for Claude
+    $("#ins-copy", root).addEventListener("click", function () {
+      var picked = all.filter(function (x) { return insState.picked[x.id]; });
+      if (!picked.length) return;
+      var lines = ["Here " + (picked.length === 1 ? "is 1 video" : "are " + picked.length + " videos") + " I saved for inspiration for The Gemini Social (social media management for small businesses). Tell me what is working in them and give me new content ideas I could adapt.", ""];
+      picked.forEach(function (x, i) {
+        lines.push("### Video " + (i + 1));
+        lines.push("Link: " + (x.link || ""));
+        lines.push("Platform: " + (x.platform || ""));
+        lines.push("Creator: " + (x.creator || ""));
+        lines.push("Hook: " + (x.hook || ""));
+        if (x.format) lines.push("Format: " + x.format);
+        if (x.pillar) lines.push("Content pillar: " + x.pillar);
+        lines.push("", "Transcript:", x.transcript ? cleanTranscript(x.transcript) || x.transcript : "(no transcript yet)");
+        lines.push("", "My notes:", x.notes || "(no notes yet)");
+        if (x.my_version) lines.push("", "My version so far:", x.my_version);
+        lines.push("");
+      });
+      copyText(lines.join("\n")).then(function (ok) { toast(ok ? "Copied " + plural(picked.length, "video") + ". Paste it into Claude." : "Couldn't copy, please try again", !ok); });
+    });
+
+    // Download the whole list
+    $("#ins-csv", root).addEventListener("click", function () {
+      if (!all.length) { toast("There's nothing to download yet"); return; }
+      downloadCSV("inspiration-" + today() + ".csv",
+        ["Link", "Platform", "Creator", "Hook", "Format", "Content pillar", "Status", "Favourite", "Transcript", "Notes", "My version", "Saved on"],
+        all.map(function (x) { return [x.link, x.platform, x.creator, x.hook, x.format, x.pillar, x.status, x.favourite ? "Yes" : "No", x.transcript, x.notes, x.my_version, fmtDate(x.created_at)]; }));
+    });
+  }
+
+  function drawDetail(root, x, all) {
+    var pillars = all.map(function (i) { return i.pillar; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
+    var link = safeLink(x.link);
+    var emb = embedFor(link);
+    var player = emb
+      ? '<div class="embed-box' + (emb.tall ? " tall" : "") + (emb.ig ? " ig" : "") + '"><iframe src="' + esc(emb.src) + '" title="' + esc((x.platform || "Video") + " video" + (x.creator ? " by " + x.creator : "")) + '" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
+      : '<div class="embed-box empty-embed"><p>This video can\'t be shown here' + (x.platform === "TikTok" ? " (short TikTok links can't be embedded, use the full link with /video/ in it)" : "") + ".</p>" + (link ? '<a class="btn primary" href="' + esc(link) + '" target="_blank" rel="noopener">Open video</a>' : "") + "</div>";
+    var html = '<div class="toolbar"><button type="button" class="btn" id="ins-back">' + ICON.left + 'All videos</button><div class="grow"></div><span class="muted" id="ins-dirty"></span>' +
+      '<button type="button" class="btn danger" id="ins-del">Delete</button><button type="button" class="btn primary" id="ins-save">Save changes</button></div>' +
+      '<div class="ins-detail"><div class="ins-left"><div class="card">' +
+      '<div class="ins-top">' + platformPill(x.platform) + exPill(x) + '<span class="grow"></span><button type="button" class="icon-btn' + (x.favourite ? " on" : "") + '" id="ins-star" aria-pressed="' + !!x.favourite + '" aria-label="Favourite">' + ICON.star + "</button></div>" +
+      player +
+      '<div class="ins-links">' + (link ? '<a class="btn" href="' + esc(link) + '" target="_blank" rel="noopener">Open video</a><a class="btn" href="' + esc(tokscriptLink(link)) + '" target="_blank" rel="noopener">Open in TokScript</a>' : "") + "</div>" +
+      '<p class="ins-link-text">' + esc(link) + "</p>" +
+      "</div></div>" +
+      '<div class="ins-right"><form id="ins-form" novalidate>' +
+      '<div class="card"><div class="form-grid">' +
+      fieldHTML({ name: "creator", label: "Creator's @", placeholder: "@creator" }, x.creator) +
+      fieldHTML({ name: "format", label: "Format", type: "select", options: [{ value: "", label: "Choose..." }].concat(INS_FORMATS) }, x.format) +
+      fieldHTML({ name: "hook", label: "Hook (the first line)", full: true }, x.hook) +
+      fieldHTML({ name: "pillar", label: "Content pillar", list: pillars }, x.pillar) +
+      fieldHTML({ name: "status", label: "Status", type: "select", options: INS_STATUS }, x.status || "Saved") +
+      "</div></div>" +
+      '<div class="card"><div class="card-head"><h2>Script (transcript)</h2><div class="ins-tools"><button type="button" class="btn" id="ins-paste">' + ICON.copy + 'Paste transcript</button><button type="button" class="btn" id="ins-clean">Clean text</button></div></div>' +
+      '<textarea class="big-text" name="transcript" id="ins-transcript" placeholder="Paste the transcript here. Tip: click &quot;Open in TokScript&quot;, copy the transcript there, then click &quot;Paste transcript&quot;.">' + esc(x.transcript) + "</textarea></div>" +
+      '<div class="card"><h2>My notes</h2><textarea class="mid-text" name="notes" placeholder="What did you like? Why does it work? Hook, pacing, visuals, call to action...">' + esc(x.notes) + "</textarea></div>" +
+      '<div class="card"><h2>My version</h2><textarea class="mid-text" name="my_version" placeholder="How would you adapt this idea for The Gemini Social or a client?">' + esc(x.my_version) + "</textarea></div>" +
+      "</form></div></div>";
+    root.innerHTML = html;
+
+    var form = $("#ins-form", root), dirty = false, fav = !!x.favourite;
+    function markDirty(on) { dirty = on; $("#ins-dirty", root).textContent = on ? "Unsaved changes" : ""; }
+    form.addEventListener("input", function () { markDirty(true); });
+    function collect() {
+      var v = {};
+      ["creator", "hook", "pillar", "transcript", "notes", "my_version"].forEach(function (k) { var val = form.elements[k].value.trim(); v[k] = val || null; });
+      if (v.creator && v.creator.charAt(0) !== "@") v.creator = "@" + v.creator;
+      v.format = form.elements.format.value || null;
+      v.status = form.elements.status.value || "Saved";
+      v.favourite = fav;
+      return v;
+    }
+    function save() {
+      var btn = $("#ins-save", root);
+      btn.disabled = true; btn.textContent = "Saving...";
+      return write(db.from("inspiration").update(collect()).eq("id", x.id), "inspiration", "Saved").then(function (ok) {
+        btn.disabled = false; btn.textContent = "Save changes";
+        if (ok) markDirty(false);
+        return ok;
+      });
+    }
+    $("#ins-save", root).addEventListener("click", save);
+    root.addEventListener("keydown", function (e) { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); } });
+    $("#ins-back", root).addEventListener("click", function () {
+      if (dirty && !window.confirm("You have unsaved changes. Leave without saving?")) return;
+      insState.view = "grid"; insState.id = null; refresh();
+    });
+    $("#ins-star", root).addEventListener("click", function (e) {
+      fav = !fav;
+      e.currentTarget.classList.toggle("on", fav);
+      e.currentTarget.setAttribute("aria-pressed", String(fav));
+      write(db.from("inspiration").update({ favourite: fav }).eq("id", x.id), "inspiration", fav ? "Added to favourites" : "Removed from favourites");
+    });
+    var del = $("#ins-del", root);
+    del.addEventListener("click", function () {
+      if (!del.classList.contains("confirm")) { del.classList.add("confirm"); del.textContent = "Click again to delete"; return; }
+      write(db.from("inspiration").delete().eq("id", x.id), "inspiration", "Video deleted").then(function (ok) {
+        if (ok) { delete insState.picked[x.id]; insState.view = "grid"; insState.id = null; refresh(); }
+      });
+    });
+    var ta = $("#ins-transcript", root);
+    $("#ins-paste", root).addEventListener("click", function () {
+      function fallback() { ta.focus(); toast("Your browser asked for permission. Click in the box and press Cmd+V (or Ctrl+V)."); }
+      if (!navigator.clipboard || !navigator.clipboard.readText) { fallback(); return; }
+      navigator.clipboard.readText().then(function (text) {
+        if (!text || !text.trim()) { toast("Your clipboard is empty. Copy the transcript first."); return; }
+        if (ta.value.trim() && !window.confirm("Replace the transcript that's already here?")) return;
+        ta.value = text.trim();
+        markDirty(true);
+        toast(hasTimestamps(text) ? "Pasted. It has timestamps: click \"Clean text\" to remove them." : "Transcript pasted. Remember to save.");
+      }, fallback);
+    });
+    $("#ins-clean", root).addEventListener("click", function () {
+      if (!ta.value.trim()) { toast("Paste a transcript first"); return; }
+      if (!hasTimestamps(ta.value)) { toast("No timestamps found, it's already clean"); return; }
+      ta.value = cleanTranscript(ta.value);
+      markDirty(true);
+      toast("Timestamps removed. Remember to save.");
     });
   }
 
