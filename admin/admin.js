@@ -1232,7 +1232,10 @@
   }
   function guessCreator(url) {
     var m = String(url || "").match(/\/(@[\w.\-]+)/);
-    return m ? m[1] : "";
+    if (m) return m[1];
+    // Newer Instagram links: instagram.com/username/reel/CODE/
+    m = String(url || "").match(/instagram\.com\/([\w.]+)\/(?:reel|reels|p|tv)\//i);
+    return m ? "@" + m[1] : "";
   }
   function guessFormat(url) {
     var p = detectPlatform(url);
