@@ -89,7 +89,9 @@
     left: '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
     right: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
     image: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>',
-    whatsapp: '<svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M4 20l1.3-4A8 8 0 1 1 8 19z"/></svg>'
+    whatsapp: '<svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M4 20l1.3-4A8 8 0 1 1 8 19z"/></svg>',
+    mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>'
   };
 
   /* ---------------------------------------------------------------
@@ -120,7 +122,7 @@
     var code = (error && error.code) || "";
     var msg = (error && error.message) || "";
     if (code === "PGRST205" || code === "42P01" || /could not find the table/i.test(msg) || (/relation/i.test(msg) && /does not exist/i.test(msg))) {
-      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "inspiration" ? "db-inspiration.sql" : "db.sql") + " to create it. Everything else keeps working.");
+      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : "db.sql") + " to create it. Everything else keeps working.");
       return "missing";
     }
     if (code === "PGRST204" || code === "42703" || /column/i.test(msg)) {
@@ -187,6 +189,7 @@
   }
   function openModal(title, html) {
     lastFocus = document.activeElement;
+    $(".modal-card").classList.remove("wide");
     $("#modal-title").textContent = title;
     $("#modal-body").innerHTML = html;
     $("#modal").hidden = false;
@@ -376,13 +379,12 @@
     results: { title: "Results", render: renderResults },
     checklists: { title: "Checklists", render: renderChecklists },
     numbers: { title: "My numbers", render: renderNumbers },
-    inspiration: { title: "Inspiration", render: renderInspiration }
+    scripts: { title: "Scripts", render: renderScripts }
   };
   var current = "portfolio";
   var renderId = 0;
   function go(tab) {
     if (!TABS[tab]) tab = "portfolio";
-    if (tab === "inspiration" && typeof insState !== "undefined") { insState.view = "grid"; insState.id = null; }
     current = tab;
     $$("#nav button").forEach(function (b) {
       if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
@@ -1192,326 +1194,467 @@
 
 
   /* =================================================================
-     8. INSPIRATION (my content)
-     Videos you like, with their transcript, your notes and "My version".
+     8. SCRIPTS (my content)
+     Transcribes videos with Supadata and keeps them in a library.
+     Your Supadata key is stored in the "settings" table in Supabase,
+     never in this file.
      ================================================================= */
-  var INS_FORMATS = ["Reel", "Short", "Long video"];
-  var INS_STATUS = ["Saved", "To adapt", "Used"];
-  var INS_STATUS_COLOUR = { "Saved": "navy", "To adapt": "gold", "Used": "green" };
-  var PLATFORM_COLOUR = { "YouTube": "red", "Instagram": "purple", "TikTok": "dark", "Other": "" };
-  var insState = { view: "grid", id: null, q: "", platform: "", pillar: "", status: "", fav: false, picked: {} };
+  var SUPADATA = "https://api.supadata.ai/v1";
+  var NO_SPEECH = "I couldn't find any speech in this video. It's usually a reel with only music or only text on screen.";
+  var SCR_LANGS = [{ value: "en", label: "English" }, { value: "pt", label: "Portuguese" }, { value: "es", label: "Spanish" }];
+  var SCR_STAGES = [{ value: "saved", label: "Saved" }, { value: "to adapt", label: "To adapt" }, { value: "used", label: "Used" }];
+  var SCR_STAGE_COLOUR = { "saved": "navy", "to adapt": "purple", "used": "green" };
+  var SCR_OWNERS = [{ value: "inspiration", label: "Inspiration" }, { value: "mine", label: "Mine" }];
+  var SCR_SOURCE_NAME = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", manual: "Written by hand" };
+  function remembered(k, fallback) { try { return localStorage.getItem(k) || fallback; } catch (e) { return fallback; } }
+  function remember(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
+  var scrState = {
+    q: "", chip: "all", picked: {}, watching: {},
+    lang: remembered("tgs_scripts_lang", "en"), owner: remembered("tgs_scripts_owner", "inspiration"),
+    key: null, keyLoaded: false, balance: null, running: null, message: null, editingKey: false
+  };
 
-  function safeLink(url) { return /^https?:\/\//i.test(String(url || "").trim()) ? String(url).trim() : ""; }
-  function detectPlatform(url) {
-    var u; try { u = new URL(String(url || "").trim()); } catch (e) { return ""; }
+  /* ---- Links ---- */
+  function scrCleanLink(raw) {
+    var s = String(raw || "").trim();
+    if (!/^https?:\/\//i.test(s)) return null;
+    var u; try { u = new URL(s); } catch (e) { return null; }
+    u.hash = "";
+    var drop = [];
+    u.searchParams.forEach(function (v, k) { if (/^utm_/i.test(k) || /^igsh/i.test(k)) drop.push(k); });
+    drop.forEach(function (k) { u.searchParams.delete(k); });
+    u.pathname = u.pathname.replace(/\/reels\//i, "/reel/");
+    return u.toString().replace(/\?$/, "");
+  }
+  function scrSource(url) {
+    var u; try { u = new URL(url); } catch (e) { return ""; }
     var h = u.hostname.toLowerCase().replace(/^(www\.|m\.|vm\.|vt\.)/, "");
-    if (h === "youtu.be" || /(^|\.)youtube\.com$/.test(h)) return "YouTube";
-    if (h === "instagr.am" || /(^|\.)instagram\.com$/.test(h)) return "Instagram";
-    if (/(^|\.)tiktok\.com$/.test(h)) return "TikTok";
-    return "Other";
-  }
-  // Works out the official embed address for each platform, or null if it can't be embedded
-  function embedFor(url) {
-    var u; try { u = new URL(String(url || "").trim()); } catch (e) { return null; }
-    var p = detectPlatform(url), path = u.pathname, m;
-    if (p === "YouTube") {
-      var id = "";
-      if (/youtu\.be$/i.test(u.hostname)) id = path.split("/")[1] || "";
-      else if (u.searchParams.get("v")) id = u.searchParams.get("v");
-      else if ((m = path.match(/\/(shorts|live|embed)\/([\w-]{11})/))) id = m[2];
-      if (!/^[\w-]{11}$/.test(id)) return null;
-      return { src: "https://www.youtube-nocookie.com/embed/" + id, tall: /\/shorts\//.test(path) };
-    }
-    if (p === "Instagram" && (m = path.match(/\/(p|reel|reels|tv)\/([\w-]+)/))) {
-      return { src: "https://www.instagram.com/" + (m[1] === "p" ? "p" : "reel") + "/" + m[2] + "/embed/", tall: true, ig: true };
-    }
-    if (p === "TikTok" && (m = path.match(/\/video\/(\d+)/))) {
-      return { src: "https://www.tiktok.com/embed/v2/" + m[1], tall: true };
-    }
-    return null;
-  }
-  function guessCreator(url) {
-    var m = String(url || "").match(/\/(@[\w.\-]+)/);
-    if (m) return m[1];
-    // Newer Instagram links: instagram.com/username/reel/CODE/
-    m = String(url || "").match(/instagram\.com\/([\w.]+)\/(?:reel|reels|p|tv)\//i);
-    return m ? "@" + m[1] : "";
-  }
-  function guessFormat(url) {
-    var p = detectPlatform(url);
-    if (p === "YouTube") return /\/shorts\//.test(url) ? "Short" : "Long video";
-    if (p === "Instagram" || p === "TikTok") return "Reel";
+    if (h === "instagram.com" || h === "instagr.am" || /\.instagram\.com$/.test(h)) return "instagram";
+    if (h === "tiktok.com" || /\.tiktok\.com$/.test(h)) return "tiktok";
+    if (h === "youtu.be" || h === "youtube.com" || /\.youtube\.com$/.test(h)) return "youtube";
     return "";
   }
-  function tokscriptLink(url) { return "https://tokscript.com/" + String(url || "").trim().replace(/^https?:\/\//i, ""); }
-  // Removes timestamps like 00:01, [0:05], 00:00:01,000 --> 00:00:03,000 and subtitle numbers
-  var TIME = "\\d{1,2}:\\d{2}(?::\\d{2})?(?:[.,]\\d{1,3})?";
-  function hasTimestamps(t) { return new RegExp(TIME).test(t || ""); }
-  function cleanTranscript(t) {
-    var lines = String(t || "").replace(/\r/g, "").split("\n");
-    var out = [], para = [];
-    lines.forEach(function (line) {
-      if (/^\s*WEBVTT/i.test(line) || /^\s*\d+\s*$/.test(line)) return;
-      var l = line
-        .replace(new RegExp(TIME + "\\s*-->\\s*" + TIME, "g"), "")
-        .replace(new RegExp("[\\[(]?\\s*" + TIME + "\\s*[\\])]?\\s*[-\u2013:]?\\s*", "g"), "")
-        .replace(/\s+/g, " ").trim();
-      if (!l) { if (para.length) { out.push(para.join(" ")); para = []; } return; }
-      para.push(l);
-    });
-    if (para.length) out.push(para.join(" "));
-    return out.join("\n\n").trim();
+  function scrProfile(url) {
+    var m = String(url || "").match(/instagram\.com\/([\w.]+)\/(?:reel|p|tv)\//i);
+    if (m && ["reel", "reels", "p", "tv", "stories"].indexOf(m[1].toLowerCase()) === -1) return "@" + m[1];
+    m = String(url || "").match(/tiktok\.com\/(@[\w.\-]+)/i);
+    return m ? m[1] : "";
   }
-  function platformPill(p) { return p ? '<span class="pill ' + (PLATFORM_COLOUR[p] || "") + '">' + esc(p) + "</span>" : ""; }
-
-  function renderInspiration(root) {
-    return read("inspiration", function (q) { return q.order("created_at", { ascending: false }); }).then(function (r) {
-      var all = r.rows, missingTable = !r.ok;
-      var byId = {}; all.forEach(function (x) { byId[x.id] = x; });
-      if (insState.view === "detail" && byId[insState.id]) return drawDetail(root, byId[insState.id], all);
-      insState.view = "grid";
-      drawGrid(root, all, missingTable);
-    });
-  }
-
-  function drawGrid(root, all, missingTable) {
-    var pillars = all.map(function (x) { return x.pillar; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
-    function filtered() {
-      var q = insState.q.toLowerCase().replace(/^@/, "");
-      return all.filter(function (x) {
-        if (insState.platform && x.platform !== insState.platform) return false;
-        if (insState.pillar && x.pillar !== insState.pillar) return false;
-        if (insState.status && x.status !== insState.status) return false;
-        if (insState.fav && !x.favourite) return false;
-        if (!q) return true;
-        return [x.transcript, x.hook, x.notes, x.creator].some(function (v) { return v && String(v).toLowerCase().replace(/(^|\s)@/g, "$1").indexOf(q) > -1; });
-      });
+  function scrEmbed(url) {
+    var u; try { u = new URL(url); } catch (e) { return ""; }
+    var src = scrSource(url), m;
+    if (src === "instagram" && (m = u.pathname.match(/\/(reel|p|tv)\/([\w-]+)/))) return "https://www.instagram.com/" + (m[1] === "p" ? "p" : "reel") + "/" + m[2] + "/embed";
+    if (src === "youtube") {
+      var id = "";
+      if (/youtu\.be$/i.test(u.hostname)) id = u.pathname.split("/")[1] || "";
+      else if (u.searchParams.get("v")) id = u.searchParams.get("v");
+      else if ((m = u.pathname.match(/\/(shorts|live|embed)\/([\w-]{11})/))) id = m[2];
+      return /^[\w-]{11}$/.test(id) ? "https://www.youtube.com/embed/" + id : "";
     }
-    var html = '<div class="toolbar"><div class="grow"><input type="search" id="ins-q" placeholder="Search transcripts, hooks, notes and creators" value="' + esc(insState.q) + '" aria-label="Search"></div>' +
-      '<select id="ins-platform" aria-label="Filter by platform"><option value="">All platforms</option>' + ["YouTube", "Instagram", "TikTok", "Other"].map(function (p) { return "<option" + (insState.platform === p ? " selected" : "") + ">" + p + "</option>"; }).join("") + "</select>" +
-      '<select id="ins-pillar" aria-label="Filter by pillar"><option value="">All pillars</option>' + pillars.map(function (p) { return '<option value="' + esc(p) + '"' + (insState.pillar === p ? " selected" : "") + ">" + esc(p) + "</option>"; }).join("") + "</select>" +
-      '<select id="ins-status" aria-label="Filter by status"><option value="">All statuses</option>' + INS_STATUS.map(function (s) { return "<option" + (insState.status === s ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select>" +
-      '<button type="button" class="btn' + (insState.fav ? " on-fav" : "") + '" id="ins-fav" aria-pressed="' + insState.fav + '">' + ICON.star + "Favourites</button></div>" +
-      '<div class="toolbar"><button type="button" class="btn primary" id="ins-add">' + ICON.plus + 'Add video</button><div class="grow"></div>' +
-      '<span class="muted" id="ins-picked-count"></span><button type="button" class="btn" id="ins-copy">' + ICON.copy + 'Copy for Claude</button><button type="button" class="btn" id="ins-csv">' + ICON.download + "Download</button></div>" +
-      '<div id="ins-list"></div>';
+    if (src === "tiktok" && (m = u.pathname.match(/\/video\/(\d+)/))) return "https://www.tiktok.com/embed/v2/" + m[1];
+    return "";
+  }
+  function firstSentence(text) {
+    var t = String(text || "").replace(/\s+/g, " ").trim();
+    if (!t) return "";
+    var m = t.match(/^.{8,}?[.!?](?=\s|$)/);
+    return (m ? m[0] : t.slice(0, 140)).trim();
+  }
+
+  /* ---- Supadata ---- */
+  function supa(path) {
+    return fetch(SUPADATA + path, { headers: { "x-api-key": scrState.key } }).then(function (res) {
+      return res.text().then(function (txt) {
+        var body = null; try { body = txt ? JSON.parse(txt) : null; } catch (e) { body = null; }
+        return { status: res.status, body: body };
+      });
+    });
+  }
+  function scrProblem(status, body) {
+    var code = (body && (body.error || body.code)) || "";
+    if (typeof code === "object") { body = code; code = code.error || code.code || ""; }
+    var details = String((body && (body.details || body.message)) || "");
+    if (code === "limit-exceeded" || status === 429) {
+      if (/plan usage limit/i.test(details)) return { msg: "You've used all of this month's Supadata credits. They come back at the start of your next month, or you can upgrade your plan on supadata.ai.", kind: "quota" };
+      return { msg: "Too many transcriptions in a row. Wait 1 minute, then try again.", kind: "rate" };
+    }
+    if (status === 401 || status === 403 || /unauthori[sz]ed|invalid-api-key|forbidden/i.test(code)) return { msg: "Your Supadata key isn't working. Check it in the Supadata key box, or copy it again from supadata.ai.", kind: "key" };
+    if (status === 206 || code === "transcript-unavailable") return { msg: NO_SPEECH, kind: "empty" };
+    if (status === 404 || code === "not-found") return { msg: "I couldn't find that video. Check the link is complete and the post is public.", kind: "notfound" };
+    if (status === 400 || code === "invalid-request") return { msg: "That link didn't work. Make sure it's the link to one single video or reel.", kind: "bad" };
+    return { msg: "Something went wrong while transcribing. Please try again in a few minutes.", kind: "other" };
+  }
+  function scrFromBody(body) {
+    var c = body && body.content, text = "", segments = null;
+    if (typeof c === "string") text = c;
+    else if (Array.isArray(c)) { segments = c; text = c.map(function (x) { return x && x.text ? x.text : ""; }).join(" "); }
+    text = text.replace(/[ \t]+/g, " ").trim();
+    if (!text || (body && body.lang === "none")) return { ok: false, problem: { msg: NO_SPEECH, kind: "empty" } };
+    return { ok: true, text: text, segments: segments, lang: body && body.lang };
+  }
+  function scrTranscribe(url, lang) {
+    var q = "/transcript?url=" + encodeURIComponent(url) + "&mode=auto&text=true&lang=" + encodeURIComponent(lang);
+    var offline = { ok: false, problem: { msg: "I couldn't reach the transcription service. Check your internet connection and try again.", kind: "network" } };
+    return supa(q).then(function (r) {
+      if (r.status === 202 && r.body && r.body.jobId) return scrPoll(r.body.jobId, Date.now());
+      if (r.status === 200) return scrFromBody(r.body);
+      return { ok: false, problem: scrProblem(r.status, r.body) };
+    }, function () { return offline; });
+  }
+  function scrPoll(jobId, started) {
+    return new Promise(function (resolve) {
+      function check() {
+        if (Date.now() - started > 6 * 60 * 1000) { resolve({ ok: false, problem: { msg: "This one took too long (over 6 minutes), so I stopped waiting. Please try again later.", kind: "timeout" } }); return; }
+        supa("/transcript/" + encodeURIComponent(jobId)).then(function (r) {
+          var st = r.body && r.body.status;
+          if (r.status >= 400) { resolve({ ok: false, problem: scrProblem(r.status, r.body) }); return; }
+          if (st === "completed") { resolve(scrFromBody(r.body.result && r.body.result.content !== undefined ? r.body.result : r.body)); return; }
+          if (st === "failed") { resolve({ ok: false, problem: scrProblem(0, r.body && r.body.error ? r.body.error : r.body) }); return; }
+          setTimeout(check, 5000);
+        }, function () { setTimeout(check, 5000); });
+      }
+      setTimeout(check, 5000);
+    });
+  }
+  function scrLoadBalance() {
+    if (!scrState.key) { scrState.balance = null; return Promise.resolve(); }
+    return supa("/me").then(function (r) {
+      if (r.status === 200 && r.body) scrState.balance = { used: n(r.body.usedCredits), max: n(r.body.maxCredits), plan: r.body.plan || "" };
+      else if (r.status === 401 || r.status === 403) scrState.balance = { error: "This key isn't working. Check it, or copy it again from supadata.ai." };
+      else scrState.balance = { error: "Couldn't check your balance right now." };
+    }, function () { scrState.balance = { error: "Couldn't check your balance right now." }; });
+  }
+
+  /* ---- The tab ---- */
+  function renderScripts(root) {
+    var keyJob = scrState.keyLoaded ? Promise.resolve() : read("settings", function (q) { return q.eq("key", "supadata_key"); }).then(function (r) {
+      scrState.key = r.rows[0] && r.rows[0].value ? r.rows[0].value : null;
+      scrState.keyLoaded = r.ok;
+      return scrLoadBalance();
+    });
+    return Promise.all([read("scripts", function (q) { return q.order("created_at", { ascending: false }); }), keyJob]).then(function (r) {
+      drawScripts(root, r[0].rows, !r[0].ok);
+    });
+  }
+
+  function scrNoticeHTML() {
+    var run = scrState.running;
+    if (run) {
+      var secs = Math.round((Date.now() - run.started) / 1000);
+      var t = secs < 60 ? secs + "s" : Math.floor(secs / 60) + "m " + (secs % 60) + "s";
+      return '<div class="notice info scr-progress"><span class="clock" aria-hidden="true"></span><span>Listening to the video... <strong>' + t + "</strong>. It usually takes 3 to 4 minutes, you can leave this tab open.</span></div>";
+    }
+    var m = scrState.message;
+    if (!m) return "";
+    return '<div class="notice ' + (m.kind || "") + '">' + m.html + "</div>";
+  }
+
+  function drawScripts(root, all, missingTable) {
+    var tags = [];
+    all.forEach(function (x) { (x.tags || []).forEach(function (t) { if (t && tags.indexOf(t) === -1) tags.push(t); }); });
+    tags.sort();
+    var chips = [{ id: "all", label: "All" }, { id: "mine", label: "Mine" }, { id: "inspiration", label: "Inspiration" }, { id: "fav", label: "Favourites" }]
+      .concat(SCR_STAGES.map(function (s) { return { id: "stage:" + s.value, label: s.label }; }))
+      .concat(tags.map(function (t) { return { id: "tag:" + t, label: "#" + t }; }));
+    if (!chips.some(function (c) { return c.id === scrState.chip; })) scrState.chip = "all";
+
+    var html = '<p class="scr-intro">Paste a video link and I\'ll transcribe it. Works for your own content and for inspiration from other creators, with a label to keep them apart.</p>' +
+      '<div class="card scr-bar"><div class="scr-row">' +
+      '<input type="url" id="scr-link" class="scr-link" placeholder="Paste here: instagram.com/reel/... · tiktok.com/... · youtube.com/..." aria-label="Video link">' +
+      '<label class="scr-select"><span>Video language</span><select id="scr-lang">' + SCR_LANGS.map(function (l) { return '<option value="' + l.value + '"' + (scrState.lang === l.value ? " selected" : "") + ">" + l.label + "</option>"; }).join("") + "</select></label>" +
+      '<label class="scr-select"><span>Whose is it?</span><select id="scr-owner">' + SCR_OWNERS.map(function (o) { return '<option value="' + o.value + '"' + (scrState.owner === o.value ? " selected" : "") + ">" + o.label + "</option>"; }).join("") + "</select></label>" +
+      '<button type="button" class="btn primary" id="scr-go"' + (scrState.running ? " disabled" : "") + ">" + ICON.mic + (scrState.running ? "Transcribing..." : "Transcribe") + "</button>" +
+      '<button type="button" class="btn" id="scr-hand">' + ICON.plus + "Write by hand</button></div>" +
+      '<div id="scr-notice" aria-live="polite">' + scrNoticeHTML() + "</div>" + scrKeyHTML() + "</div>";
+
+    html += '<div class="toolbar"><div class="grow"><input type="search" id="scr-q" placeholder="Search transcripts, hooks, profiles, titles and notes" value="' + esc(scrState.q) + '" aria-label="Search scripts"></div>' +
+      '<span class="muted" id="scr-picked"></span><button type="button" class="btn" id="scr-study">' + ICON.copy + "Study with Claude</button></div>" +
+      '<div class="chips" role="group" aria-label="Filter scripts">' + chips.map(function (c) { return '<button type="button" data-chip="' + esc(c.id) + '" aria-pressed="' + (scrState.chip === c.id) + '">' + esc(c.label) + "</button>"; }).join("") + "</div>" +
+      '<div id="scr-list"></div>';
     root.innerHTML = html;
 
+    var byId = {}; all.forEach(function (x) { byId[x.id] = x; });
+    function matches(x) {
+      var c = scrState.chip;
+      if (c === "mine" && x.owner !== "mine") return false;
+      if (c === "inspiration" && x.owner !== "inspiration") return false;
+      if (c === "fav" && !x.favourite) return false;
+      if (c.indexOf("stage:") === 0 && x.stage !== c.slice(6)) return false;
+      if (c.indexOf("tag:") === 0 && (x.tags || []).indexOf(c.slice(4)) === -1) return false;
+      var q = scrState.q.toLowerCase().replace(/^@/, "");
+      if (!q) return true;
+      return [x.transcript, x.hook, x.profile, x.title, x.notes].some(function (v) { return v && String(v).toLowerCase().replace(/(^|\s)@/g, "$1").indexOf(q) > -1; });
+    }
+    function card(x) {
+      var src = x.source || "manual", url = x.url && /^https?:\/\//i.test(x.url) ? x.url : "";
+      var embed = url ? scrEmbed(url) : "";
+      var isRunningHere = scrState.running && scrState.running.id === x.id;
+      var cover;
+      if (scrState.watching[x.id] && embed) cover = '<iframe src="' + esc(embed) + '" title="Video by ' + esc(x.profile || "creator") + '" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>';
+      else cover = '<span class="scr-src-name">' + esc(SCR_SOURCE_NAME[src] || src) + "</span>" +
+        (x.status === "processing" ? '<span class="clock big" aria-hidden="true"></span>' : "") +
+        (embed ? '<button type="button" class="btn scr-watch" data-watch="' + esc(x.id) + '">' + ICON.play + "Watch video</button>" : (url ? '<a class="btn scr-watch" href="' + esc(url) + '" target="_blank" rel="noopener">Open video</a>' : ""));
+      var dateTxt = x.posted_on ? "Posted " + fmtDate(x.posted_on) : "Saved " + fmtDate(x.created_at);
+      var stage = SCR_STAGES.filter(function (s) { return s.value === x.stage; })[0];
+      var body = "";
+      if (x.status === "processing") {
+        body = isRunningHere ? '<p class="scr-state"><span class="clock" aria-hidden="true"></span>Transcribing now...</p>'
+          : '<p class="scr-state"><span class="clock" aria-hidden="true"></span>This transcription didn\'t finish, probably because the page was closed.</p><div class="scr-actions">' + (url ? '<button type="button" class="btn primary" data-retry="' + esc(x.id) + '">Try again</button>' : "") + '<button type="button" class="btn" data-edit="' + esc(x.id) + '">Open anyway</button><button type="button" class="btn danger" data-del="' + esc(x.id) + '">Delete</button></div>';
+      } else if (x.status === "failed") {
+        body = '<p class="scr-state failed">' + esc(x.error || "This transcription didn't work.") + '</p><div class="scr-actions">' + (url && !/speech/.test(x.error || "") ? '<button type="button" class="btn" data-retry="' + esc(x.id) + '">Try again</button>' : "") + '<button type="button" class="btn primary" data-edit="' + esc(x.id) + '">Open anyway</button><button type="button" class="btn danger" data-del="' + esc(x.id) + '">Delete</button></div>';
+      } else {
+        body = (x.hook ? '<p class="scr-hook">' + esc(x.hook) + "</p>" : "") +
+          (x.transcript ? '<p class="scr-excerpt">' + esc(x.transcript) + "</p>" : '<p class="scr-excerpt muted">No transcript yet.</p>') +
+          '<div class="scr-actions"><button type="button" class="btn" data-copy="' + esc(x.id) + '"' + (x.transcript ? "" : " disabled") + ">" + ICON.copy + 'Copy transcript</button><button type="button" class="btn" data-edit="' + esc(x.id) + '">Edit</button><button type="button" class="btn danger" data-del="' + esc(x.id) + '">Delete</button></div>';
+      }
+      return '<article class="scr-card' + (x.status === "processing" ? " processing" : x.status === "failed" ? " failed" : "") + (scrState.picked[x.id] ? " picked" : "") + '" data-id="' + esc(x.id) + '">' +
+        '<div class="scr-cover src-' + esc(src) + (scrState.watching[x.id] && embed ? " playing" : "") + '">' + cover + "</div>" +
+        '<div class="scr-body"><div class="scr-head"><label class="scr-tick" title="Tick to include in Study with Claude"><input type="checkbox" data-pick="' + esc(x.id) + '"' + (scrState.picked[x.id] ? " checked" : "") + '><span class="sr-only">Select</span></label>' +
+        '<h3 class="scr-title">' + esc(x.title || "Untitled") + '</h3><button type="button" class="icon-btn' + (x.favourite ? " on" : "") + '" data-fav="' + esc(x.id) + '" aria-pressed="' + !!x.favourite + '" aria-label="' + (x.favourite ? "Remove from favourites" : "Add to favourites") + '">' + ICON.star + "</button></div>" +
+        '<div class="scr-meta">' + (x.profile ? '<span class="scr-profile">' + esc(x.profile) + "</span>" : "") +
+        '<span class="pill ' + (x.owner === "mine" ? "gold" : "teal") + '">' + (x.owner === "mine" ? "Mine" : "Inspiration") + "</span>" +
+        '<span class="pill">' + esc(SCR_SOURCE_NAME[src] || src) + "</span>" +
+        (stage && x.status === "ready" ? pill(stage.label, SCR_STAGE_COLOUR[stage.value]) : "") +
+        (x.tags || []).map(function (t) { return '<span class="scr-tag">#' + esc(t) + "</span>"; }).join("") +
+        '<span class="muted">' + esc(dateTxt) + "</span></div>" + body + "</div></article>";
+    }
     function drawList() {
-      var list = filtered();
-      var box = $("#ins-list", root);
+      var list = all.filter(matches);
+      var box = $("#scr-list", root);
       if (!all.length) {
         box.innerHTML = '<div class="card"><p class="empty">' + (missingTable
-          ? "Your Inspiration list will appear here once the inspiration table is set up in Supabase (see the note at the top)."
-          : "This is your swipe file. Save videos you love from YouTube, Instagram and TikTok, paste their transcript, and note what makes them work and how you'd make your own version. Click \"Add video\" to save the first one.") + "</p></div>";
+          ? "Your scripts will appear here once the scripts table is set up in Supabase (see the note at the top)."
+          : "This is your script library. Paste a link to a reel, TikTok or YouTube video above and I'll write out what's said, so you can study what works, keep your own scripts in one place and plan new content. Mark each one as Mine or Inspiration to keep them apart.") + "</p></div>";
       } else if (!list.length) {
-        box.innerHTML = '<div class="card"><p class="empty">No videos match your search or filters.</p></div>';
+        box.innerHTML = '<div class="card"><p class="empty">No scripts match your search or filter.</p></div>';
       } else {
-        box.innerHTML = '<div class="ins-grid">' + list.map(function (x) {
-          var picked = !!insState.picked[x.id];
-          return '<article class="ins-card' + (picked ? " picked" : "") + '" data-id="' + esc(x.id) + '" tabindex="0" aria-label="' + esc((x.creator || "Video") + ": " + (x.hook || "")) + '">' +
-            '<div class="ins-top"><label class="ins-tick" title="Tick to include in Copy for Claude"><input type="checkbox" data-pick="' + esc(x.id) + '"' + (picked ? " checked" : "") + '><span class="sr-only">Select</span></label>' +
-            platformPill(x.platform) + exPill(x) + '<span class="grow"></span><button type="button" class="icon-btn' + (x.favourite ? " on" : "") + '" data-fav="' + esc(x.id) + '" aria-pressed="' + !!x.favourite + '" aria-label="' + (x.favourite ? "Remove from favourites" : "Add to favourites") + '">' + ICON.star + "</button></div>" +
-            '<div class="ins-creator">' + esc(x.creator || "Unknown creator") + "</div>" +
-            '<p class="ins-hook">' + (x.hook ? esc(x.hook) : '<span class="muted">No hook written yet</span>') + "</p>" +
-            '<div class="ins-meta">' + pill(x.status || "Saved", INS_STATUS_COLOUR[x.status || "Saved"]) + (x.format ? '<span class="muted">' + esc(x.format) + "</span>" : "") + (x.pillar ? '<span class="muted">' + esc(x.pillar) + "</span>" : "") + (x.transcript ? "" : '<span class="tag yellow">no transcript</span>') + "</div></article>";
-        }).join("") + "</div>";
+        box.innerHTML = '<div class="scr-list">' + list.map(card).join("") + "</div>";
       }
-      var n = Object.keys(insState.picked).filter(function (k) { return insState.picked[k]; }).length;
-      $("#ins-picked-count", root).textContent = n ? n + " ticked" : "Tick videos to copy them";
-      $("#ins-copy", root).disabled = n === 0;
+      var k = Object.keys(scrState.picked).filter(function (id) { return scrState.picked[id] && byId[id]; }).length;
+      $("#scr-picked", root).textContent = k ? k + " ticked" : "";
     }
     drawList();
 
-    $("#ins-q", root).addEventListener("input", function (e) { insState.q = e.target.value; drawList(); });
-    $("#ins-platform", root).addEventListener("change", function (e) { insState.platform = e.target.value; drawList(); });
-    $("#ins-pillar", root).addEventListener("change", function (e) { insState.pillar = e.target.value; drawList(); });
-    $("#ins-status", root).addEventListener("change", function (e) { insState.status = e.target.value; drawList(); });
-    $("#ins-fav", root).addEventListener("click", function (e) {
-      insState.fav = !insState.fav;
-      e.currentTarget.setAttribute("aria-pressed", String(insState.fav));
-      e.currentTarget.classList.toggle("on-fav", insState.fav);
-      drawList();
+    // Notice ticks every second while a transcription is running
+    clearInterval(scrState.tick);
+    if (scrState.running) {
+      scrState.tick = setInterval(function () {
+        var box = document.getElementById("scr-notice");
+        if (!box || !scrState.running) { clearInterval(scrState.tick); return; }
+        box.innerHTML = scrNoticeHTML();
+      }, 1000);
+    }
+
+    // Top row
+    $("#scr-lang", root).addEventListener("change", function (e) { scrState.lang = e.target.value; remember("tgs_scripts_lang", e.target.value); });
+    $("#scr-owner", root).addEventListener("change", function (e) { scrState.owner = e.target.value; remember("tgs_scripts_owner", e.target.value); });
+    $("#scr-link", root).addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("#scr-go", root).click(); } });
+    $("#scr-go", root).addEventListener("click", function () { scrStart($("#scr-link", root).value, all, null); });
+    $("#scr-hand", root).addEventListener("click", function () { scrEdit(null, { owner: scrState.owner, url: scrCleanLink($("#scr-link", root).value) || "" }); });
+    wireKey(root);
+    // "Save it anyway" (after a video with no speech)
+    $("#scr-notice", root).addEventListener("click", function (e) {
+      if (!e.target.closest("#scr-anyway") || !scrState.anywayId) return;
+      Promise.resolve(db.from("scripts").select("*").eq("id", scrState.anywayId).single()).then(function (res) { if (res.data) scrEdit(res.data); });
     });
-    var byId = {}; all.forEach(function (x) { byId[x.id] = x; });
-    $("#ins-list", root).addEventListener("click", function (e) {
-      var pick = e.target.closest("[data-pick]");
-      if (pick) { insState.picked[pick.dataset.pick] = pick.checked; drawList(); return; }
-      if (e.target.closest(".ins-tick")) return;
-      var fav = e.target.closest("[data-fav]");
-      if (fav) {
-        var x = byId[fav.dataset.fav];
-        write(db.from("inspiration").update({ favourite: !x.favourite }).eq("id", x.id), "inspiration").then(function (ok) { if (ok) { x.favourite = !x.favourite; drawList(); } });
+
+    // Library
+    $("#scr-q", root).addEventListener("input", function (e) { scrState.q = e.target.value; drawList(); });
+    $$(".chips button", root).forEach(function (b) {
+      b.addEventListener("click", function () {
+        scrState.chip = b.dataset.chip;
+        $$(".chips button", root).forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+        drawList();
+      });
+    });
+    $("#scr-list", root).addEventListener("click", function (e) {
+      var el;
+      if ((el = e.target.closest("[data-pick]"))) { scrState.picked[el.dataset.pick] = el.checked; drawList(); return; }
+      if (e.target.closest(".scr-tick")) return;
+      if ((el = e.target.closest("[data-watch]"))) { scrState.watching[el.dataset.watch] = true; drawList(); return; }
+      if ((el = e.target.closest("[data-fav]"))) {
+        var f = byId[el.dataset.fav];
+        write(db.from("scripts").update({ favourite: !f.favourite }).eq("id", f.id), "scripts").then(function (ok) { if (ok) { f.favourite = !f.favourite; drawList(); } });
         return;
       }
-      var card = e.target.closest(".ins-card");
-      if (card) { insState.view = "detail"; insState.id = card.dataset.id; refresh(); window.scrollTo({ top: 0 }); }
-    });
-    $("#ins-list", root).addEventListener("keydown", function (e) {
-      var card = e.target.classList && e.target.classList.contains("ins-card") ? e.target : null;
-      if (card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); insState.view = "detail"; insState.id = card.dataset.id; refresh(); }
-    });
-
-    // Add video
-    $("#ins-add", root).addEventListener("click", function () {
-      openForm({
-        title: "Add video",
-        saveLabel: "Save video",
-        values: { status: "Saved" },
-        fields: [
-          { name: "link", label: "Paste the video link", type: "url", required: true, full: true, placeholder: "https://www.instagram.com/reel/...", help: "YouTube, Instagram or TikTok. The platform is detected by itself." },
-          { name: "creator", label: "Creator's @", placeholder: "@creator" },
-          { name: "format", label: "Format", type: "select", options: [{ value: "", label: "Choose..." }].concat(INS_FORMATS) },
-          { name: "hook", label: "Hook (the first line)", full: true },
-          { name: "pillar", label: "Content pillar", list: pillars },
-          { name: "status", label: "Status", type: "select", options: INS_STATUS }
-        ],
-        onSave: function (v) {
-          var link = safeLink(v.link);
-          if (!link) { $("#form-error").textContent = "Please paste a full link that starts with https://"; return Promise.resolve(false); }
-          v.link = link;
-          v.platform = detectPlatform(link) || "Other";
-          if (!v.creator) v.creator = guessCreator(link) || null;
-          if (v.creator && v.creator.charAt(0) !== "@") v.creator = "@" + v.creator;
-          if (!v.format) v.format = guessFormat(link) || null;
-          return Promise.resolve(db.from("inspiration").insert(v).select("id").single()).then(function (res) {
-            if (res.error) { explain(res.error, "inspiration"); toast("Couldn't save: " + (res.error.message || "please try again"), true); return false; }
-            toast("Video saved. Now add the transcript.");
-            insState.view = "detail"; insState.id = res.data && res.data.id;
-            return true;
-          }, function () { toast("Couldn't save, please try again.", true); return false; });
-        }
-      });
-      // Show the platform as soon as a link is pasted
-      var linkInput = $("#f-link"), help = linkInput && linkInput.parentNode.querySelector(".help");
-      if (linkInput && help) linkInput.addEventListener("input", function () {
-        var p = detectPlatform(linkInput.value);
-        help.innerHTML = p ? "Detected: " + platformPill(p) : "YouTube, Instagram or TikTok. The platform is detected by itself.";
-        var c = $("#f-creator"), f = $("#f-format");
-        if (c && !c.value) c.value = guessCreator(linkInput.value);
-        if (f && !f.value) f.value = guessFormat(linkInput.value);
-      });
+      if ((el = e.target.closest("[data-copy]"))) {
+        var c = byId[el.dataset.copy], btn = el;
+        copyText(c.transcript || "").then(function (ok) {
+          if (!ok) { toast("Couldn't copy, please try again", true); return; }
+          btn.innerHTML = ICON.copy + "Copied";
+          setTimeout(function () { if (btn.isConnected) btn.innerHTML = ICON.copy + "Copy transcript"; }, 1800);
+        });
+        return;
+      }
+      if ((el = e.target.closest("[data-edit]"))) { scrEdit(byId[el.dataset.edit]); return; }
+      if ((el = e.target.closest("[data-retry]"))) { var rr = byId[el.dataset.retry]; scrStart(rr.url, all, rr); return; }
+      if ((el = e.target.closest("[data-del]"))) {
+        if (!el.classList.contains("confirm")) { el.classList.add("confirm"); el.textContent = "Click again to delete"; return; }
+        write(db.from("scripts").delete().eq("id", el.dataset.del), "scripts", "Script deleted").then(function (ok) { if (ok) { delete scrState.picked[el.dataset.del]; refresh(); } });
+      }
     });
 
-    // Copy for Claude
-    $("#ins-copy", root).addEventListener("click", function () {
-      var picked = all.filter(function (x) { return insState.picked[x.id]; });
-      if (!picked.length) return;
-      var lines = ["Here " + (picked.length === 1 ? "is 1 video" : "are " + picked.length + " videos") + " I saved for inspiration for The Gemini Social (social media management for small businesses). Tell me what is working in them and give me new content ideas I could adapt.", ""];
-      picked.forEach(function (x, i) {
-        lines.push("### Video " + (i + 1));
-        lines.push("Link: " + (x.link || ""));
-        lines.push("Platform: " + (x.platform || ""));
-        lines.push("Creator: " + (x.creator || ""));
-        lines.push("Hook: " + (x.hook || ""));
-        if (x.format) lines.push("Format: " + x.format);
-        if (x.pillar) lines.push("Content pillar: " + x.pillar);
-        lines.push("", "Transcript:", x.transcript ? cleanTranscript(x.transcript) || x.transcript : "(no transcript yet)");
-        lines.push("", "My notes:", x.notes || "(no notes yet)");
-        if (x.my_version) lines.push("", "My version so far:", x.my_version);
+    // Study with Claude
+    $("#scr-study", root).addEventListener("click", function () {
+      var picked = all.filter(function (x) { return scrState.picked[x.id]; });
+      var list = picked.length ? picked : all.filter(function (x) { return x.owner === "inspiration" && x.status === "ready" && x.transcript; }).slice(0, 10);
+      if (!list.length) { toast("Save a few Inspiration scripts first, or tick the ones you want to study."); return; }
+      var lines = [
+        "I run The Gemini Social. My topic is social media management for small businesses. My audience is busy small business owners who might hire a social media manager. My tone is relaxed, direct and conversational.",
+        "",
+        "Below are " + (list.length === 1 ? "1 script" : list.length + " scripts") + " from videos I saved. Please study them and give me:",
+        "1. The topics that are trending across them.",
+        "2. The phrases and moments that are holding attention, and why they work.",
+        "3. The hook patterns you can see, with a real example of each taken from these scripts.",
+        "4. Five new scripts on MY topic that reuse the structure of the strongest ones (the structure, not the content). Keep them natural and conversational, never robotic, and open each one with a strong hook.",
+        ""
+      ];
+      list.forEach(function (x, i) {
+        lines.push("### Script " + (i + 1) + (x.title ? ": " + x.title : ""));
+        lines.push("Profile: " + (x.profile || "unknown"));
+        lines.push("Hook: " + (x.hook || firstSentence(x.transcript) || ""));
+        lines.push("Transcript:", x.transcript || "(no transcript)");
+        if (x.notes) lines.push("My notes: " + x.notes);
         lines.push("");
       });
-      copyText(lines.join("\n")).then(function (ok) { toast(ok ? "Copied " + plural(picked.length, "video") + ". Paste it into Claude." : "Couldn't copy, please try again", !ok); });
-    });
-
-    // Download the whole list
-    $("#ins-csv", root).addEventListener("click", function () {
-      if (!all.length) { toast("There's nothing to download yet"); return; }
-      downloadCSV("inspiration-" + today() + ".csv",
-        ["Link", "Platform", "Creator", "Hook", "Format", "Content pillar", "Status", "Favourite", "Transcript", "Notes", "My version", "Saved on"],
-        all.map(function (x) { return [x.link, x.platform, x.creator, x.hook, x.format, x.pillar, x.status, x.favourite ? "Yes" : "No", x.transcript, x.notes, x.my_version, fmtDate(x.created_at)]; }));
+      copyText(lines.join("\n")).then(function (ok) {
+        toast(ok ? "Prompt copied with " + plural(list.length, "script") + ". Paste it into Claude." : "Couldn't copy, please try again", !ok);
+      });
     });
   }
 
-  function drawDetail(root, x, all) {
-    var pillars = all.map(function (i) { return i.pillar; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
-    var link = safeLink(x.link);
-    var emb = embedFor(link);
-    var player = emb
-      ? '<div class="embed-box' + (emb.tall ? " tall" : "") + (emb.ig ? " ig" : "") + '"><iframe src="' + esc(emb.src) + '" title="' + esc((x.platform || "Video") + " video" + (x.creator ? " by " + x.creator : "")) + '" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
-      : '<div class="embed-box empty-embed"><p>This video can\'t be shown here' + (x.platform === "TikTok" ? " (short TikTok links can't be embedded, use the full link with /video/ in it)" : "") + ".</p>" + (link ? '<a class="btn primary" href="' + esc(link) + '" target="_blank" rel="noopener">Open video</a>' : "") + "</div>";
-    var html = '<div class="toolbar"><button type="button" class="btn" id="ins-back">' + ICON.left + 'All videos</button><div class="grow"></div><span class="muted" id="ins-dirty"></span>' +
-      '<button type="button" class="btn danger" id="ins-del">Delete</button><button type="button" class="btn primary" id="ins-save">Save changes</button></div>' +
-      '<div class="ins-detail"><div class="ins-left"><div class="card">' +
-      '<div class="ins-top">' + platformPill(x.platform) + exPill(x) + '<span class="grow"></span><button type="button" class="icon-btn' + (x.favourite ? " on" : "") + '" id="ins-star" aria-pressed="' + !!x.favourite + '" aria-label="Favourite">' + ICON.star + "</button></div>" +
-      player +
-      '<div class="ins-links">' + (link ? '<a class="btn" href="' + esc(link) + '" target="_blank" rel="noopener">Open video</a><a class="btn" href="' + esc(tokscriptLink(link)) + '" target="_blank" rel="noopener">Open in TokScript</a>' : "") + "</div>" +
-      '<p class="ins-link-text">' + esc(link) + "</p>" +
-      "</div></div>" +
-      '<div class="ins-right"><form id="ins-form" novalidate>' +
-      '<div class="card"><div class="form-grid">' +
-      fieldHTML({ name: "creator", label: "Creator's @", placeholder: "@creator" }, x.creator) +
-      fieldHTML({ name: "format", label: "Format", type: "select", options: [{ value: "", label: "Choose..." }].concat(INS_FORMATS) }, x.format) +
-      fieldHTML({ name: "hook", label: "Hook (the first line)", full: true }, x.hook) +
-      fieldHTML({ name: "pillar", label: "Content pillar", list: pillars }, x.pillar) +
-      fieldHTML({ name: "status", label: "Status", type: "select", options: INS_STATUS }, x.status || "Saved") +
-      "</div></div>" +
-      '<div class="card"><div class="card-head"><h2>Script (transcript)</h2><div class="ins-tools"><button type="button" class="btn" id="ins-paste">' + ICON.copy + 'Paste transcript</button><button type="button" class="btn" id="ins-clean">Clean text</button></div></div>' +
-      '<textarea class="big-text" name="transcript" id="ins-transcript" placeholder="Paste the transcript here. Tip: click &quot;Open in TokScript&quot;, copy the transcript there, then click &quot;Paste transcript&quot;.">' + esc(x.transcript) + "</textarea></div>" +
-      '<div class="card"><h2>My notes</h2><textarea class="mid-text" name="notes" placeholder="What did you like? Why does it work? Hook, pacing, visuals, call to action...">' + esc(x.notes) + "</textarea></div>" +
-      '<div class="card"><h2>My version</h2><textarea class="mid-text" name="my_version" placeholder="How would you adapt this idea for The Gemini Social or a client?">' + esc(x.my_version) + "</textarea></div>" +
-      "</form></div></div>";
-    root.innerHTML = html;
+  /* ---- Supadata key box ---- */
+  function scrKeyHTML() {
+    if (!scrState.keyLoaded) return "";
+    if (scrState.key && !scrState.editingKey) {
+      var b = scrState.balance, bal = "";
+      if (b && b.error) bal = '<span class="tag yellow">' + esc(b.error) + "</span>";
+      else if (b) bal = '<span class="muted">' + fmtNum(b.used) + " of " + fmtNum(b.max) + " credits used this month" + (b.plan ? " (" + esc(b.plan) + " plan)" : "") + "</span>";
+      return '<div class="scr-key"><span class="scr-key-label">Supadata key</span><code>••••' + esc(String(scrState.key).slice(-4)) + "</code>" + bal +
+        '<span class="grow"></span><button type="button" class="btn" id="scr-key-change">Change key</button></div>';
+    }
+    return '<div class="scr-key setup"><div><strong>Add your Supadata key to start transcribing.</strong> Create a free account at <a href="https://supadata.ai" target="_blank" rel="noopener">supadata.ai</a> (100 credits a month, no card needed), copy your API key and paste it here. It\'s saved privately in your database, never on your website.</div>' +
+      '<div class="scr-key-row"><input type="password" id="scr-key-input" placeholder="Paste your Supadata key" autocomplete="off" aria-label="Supadata key"><button type="button" class="btn primary" id="scr-key-save">Save key</button>' +
+      (scrState.key ? '<button type="button" class="btn" id="scr-key-cancel">Cancel</button><button type="button" class="btn danger" id="scr-key-remove">Remove key</button>' : "") + "</div></div>";
+  }
+  function wireKey(root) {
+    var ch = $("#scr-key-change", root);
+    if (ch) ch.addEventListener("click", function () { scrState.editingKey = true; refresh(); });
+    var cancel = $("#scr-key-cancel", root);
+    if (cancel) cancel.addEventListener("click", function () { scrState.editingKey = false; refresh(); });
+    var save = $("#scr-key-save", root);
+    if (save) save.addEventListener("click", function () {
+      var v = $("#scr-key-input", root).value.trim();
+      if (!v) { scrSay("Paste your Supadata key first.", "error"); return; }
+      save.disabled = true;
+      write(db.from("settings").upsert({ key: "supadata_key", value: v }, { onConflict: "key" }), "settings", "Key saved").then(function (ok) {
+        save.disabled = false;
+        if (!ok) return;
+        scrState.key = v; scrState.editingKey = false; scrState.message = null;
+        scrLoadBalance().then(refresh);
+      });
+    });
+    var rem = $("#scr-key-remove", root);
+    if (rem) rem.addEventListener("click", function () {
+      if (!rem.classList.contains("confirm")) { rem.classList.add("confirm"); rem.textContent = "Click again to remove"; return; }
+      write(db.from("settings").delete().eq("key", "supadata_key"), "settings", "Key removed").then(function (ok) {
+        if (ok) { scrState.key = null; scrState.balance = null; scrState.editingKey = false; refresh(); }
+      });
+    });
+  }
+  function scrSay(html, kind) {
+    scrState.message = { html: html, kind: kind || "" };
+    var box = document.getElementById("scr-notice");
+    if (box) box.innerHTML = scrNoticeHTML();
+  }
 
-    var form = $("#ins-form", root), dirty = false, fav = !!x.favourite;
-    function markDirty(on) { dirty = on; $("#ins-dirty", root).textContent = on ? "Unsaved changes" : ""; }
-    form.addEventListener("input", function () { markDirty(true); });
-    function collect() {
-      var v = {};
-      ["creator", "hook", "pillar", "transcript", "notes", "my_version"].forEach(function (k) { var val = form.elements[k].value.trim(); v[k] = val || null; });
-      if (v.creator && v.creator.charAt(0) !== "@") v.creator = "@" + v.creator;
-      v.format = form.elements.format.value || null;
-      v.status = form.elements.status.value || "Saved";
-      v.favourite = fav;
-      return v;
-    }
-    function save() {
-      var btn = $("#ins-save", root);
-      btn.disabled = true; btn.textContent = "Saving...";
-      return write(db.from("inspiration").update(collect()).eq("id", x.id), "inspiration", "Saved").then(function (ok) {
-        btn.disabled = false; btn.textContent = "Save changes";
-        if (ok) markDirty(false);
-        return ok;
+  /* ---- Transcribe, step by step ---- */
+  function scrStart(rawLink, all, retryRow) {
+    if (scrState.running) { scrSay("One transcription at a time, please. The current one is still going.", "error"); return; }
+    var url = scrCleanLink(rawLink);
+    if (!url) { scrSay("That doesn't look like a link. Copy the full link of the video (it starts with https://) and paste it here.", "error"); return; }
+    var source = scrSource(url);
+    if (!source) { scrSay("I can only transcribe links from Instagram, TikTok or YouTube. For anything else, use \"Write by hand\".", "error"); return; }
+    if (!scrState.key) { scrSay("<strong>First, add your Supadata key.</strong> Create a free account at supadata.ai (100 credits a month, no card needed), copy your API key and paste it in the box below.", "error"); return; }
+    if (!retryRow && all.some(function (x) { return x.url === url; }) && !window.confirm("This video is already in your library. Transcribe it again?")) return;
+
+    var lang = scrState.lang, owner = scrState.owner;
+    scrState.message = null;
+    var rowJob = retryRow
+      ? Promise.resolve(db.from("scripts").update({ status: "processing", error: null }).eq("id", retryRow.id)).then(function (res) { return res.error ? { error: res.error } : { id: retryRow.id }; })
+      : Promise.resolve(db.from("scripts").insert({ url: url, source: source, profile: scrProfile(url) || null, owner: owner, language: lang, status: "processing" }).select("id").single()).then(function (res) { return res.error ? { error: res.error } : { id: res.data.id }; });
+    rowJob.then(function (row) {
+      if (row.error) { explain(row.error, "scripts"); scrSay("I couldn't add this to your library. See the note at the top of the page.", "error"); return; }
+      scrState.running = { id: row.id, started: Date.now(), url: url };
+      var linkBox = document.getElementById("scr-link"); if (linkBox) linkBox.value = "";
+      refresh();
+      scrTranscribe(url, retryRow ? (retryRow.language || lang) : lang).then(function (result) {
+        scrState.running = null;
+        if (result.ok) {
+          var patch = { transcript: result.text, segments: result.segments || null, status: "ready", error: null, hook: firstSentence(result.text) || null };
+          if (result.lang && result.lang !== "none") patch.language = String(result.lang).slice(0, 10);
+          Promise.resolve(db.from("scripts").update(patch).eq("id", row.id)).then(function () {
+            scrLoadBalance();
+            scrSay("Done. Check it, give it a name and save.", "info");
+            Promise.resolve(db.from("scripts").select("*").eq("id", row.id).single()).then(function (res) {
+              refresh();
+              if (res.data) scrEdit(res.data, null, "Done. Check it, give it a name and save.");
+            });
+          });
+          return;
+        }
+        var p = result.problem;
+        Promise.resolve(db.from("scripts").update({ status: "failed", error: p.msg }).eq("id", row.id)).then(function () {
+          scrLoadBalance();
+          var extra = p.kind === "empty" ? ' <button type="button" class="btn" id="scr-anyway">Save it anyway</button>' : "";
+          scrState.anywayId = row.id;
+          scrSay(esc(p.msg) + extra, "error");
+          refresh();
+        });
       });
-    }
-    $("#ins-save", root).addEventListener("click", save);
-    root.addEventListener("keydown", function (e) { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); } });
-    $("#ins-back", root).addEventListener("click", function () {
-      if (dirty && !window.confirm("You have unsaved changes. Leave without saving?")) return;
-      insState.view = "grid"; insState.id = null; refresh();
     });
-    $("#ins-star", root).addEventListener("click", function (e) {
-      fav = !fav;
-      e.currentTarget.classList.toggle("on", fav);
-      e.currentTarget.setAttribute("aria-pressed", String(fav));
-      write(db.from("inspiration").update({ favourite: fav }).eq("id", x.id), "inspiration", fav ? "Added to favourites" : "Removed from favourites");
+  }
+
+  /* ---- Edit (or write by hand) ---- */
+  function scrEdit(x, defaults, banner) {
+    var v = x ? Object.assign({}, x) : Object.assign({ owner: "inspiration", stage: "saved" }, defaults || {});
+    v.tags = (v.tags || []).join(", ");
+    if (!v.hook && v.transcript) v.hook = firstSentence(v.transcript);
+    openForm({
+      title: x ? "Edit script" : "Write a script by hand",
+      saveLabel: "Save",
+      values: v,
+      fields: [
+        { name: "title", label: "Title", full: true, placeholder: "Give it a name you'll recognise" },
+        { name: "owner", label: "Whose is it?", type: "select", options: SCR_OWNERS },
+        { name: "profile", label: "Profile", placeholder: "@creator" },
+        { name: "url", label: "Link", type: "url", full: true, placeholder: "https://..." },
+        { name: "posted_on", label: "Date posted", type: "date" },
+        { name: "stage", label: "Status", type: "select", options: SCR_STAGES },
+        { name: "hook", label: "Hook (the opening line)", full: true },
+        { name: "tags", label: "Tags (separated by commas)", full: true, placeholder: "e.g. hooks, storytelling, tips" },
+        { name: "favourite", label: "Favourite", type: "checkbox", full: true },
+        { name: "caption", label: "The post's caption", type: "textarea" },
+        { name: "transcript", label: "Transcript", type: "textarea" },
+        { name: "notes", label: "My notes (what I liked and why it works)", type: "textarea" },
+        { name: "my_version", label: "My version (how I'd adapt the idea for my own content)", type: "textarea" }
+      ],
+      onSave: function (d) {
+        d.tags = String(d.tags || "").split(",").map(function (t) { return t.trim().replace(/^#/, ""); }).filter(Boolean);
+        if (d.profile && d.profile.charAt(0) !== "@") d.profile = "@" + d.profile;
+        var clean = d.url ? scrCleanLink(d.url) : null;
+        if (d.url && !clean) { $("#form-error").textContent = "The link needs to start with https://"; return Promise.resolve(false); }
+        d.url = clean;
+        d.status = "ready"; d.error = null;
+        if (x) return write(db.from("scripts").update(d).eq("id", x.id), "scripts", "Script saved");
+        d.source = (clean && scrSource(clean)) || "manual";
+        return write(db.from("scripts").insert(d), "scripts", "Script saved");
+      },
+      onDelete: x ? function () { return write(db.from("scripts").delete().eq("id", x.id), "scripts", "Script deleted"); } : null
     });
-    var del = $("#ins-del", root);
-    del.addEventListener("click", function () {
-      if (!del.classList.contains("confirm")) { del.classList.add("confirm"); del.textContent = "Click again to delete"; return; }
-      write(db.from("inspiration").delete().eq("id", x.id), "inspiration", "Video deleted").then(function (ok) {
-        if (ok) { delete insState.picked[x.id]; insState.view = "grid"; insState.id = null; refresh(); }
-      });
-    });
-    var ta = $("#ins-transcript", root);
-    $("#ins-paste", root).addEventListener("click", function () {
-      function fallback() { ta.focus(); toast("Your browser asked for permission. Click in the box and press Cmd+V (or Ctrl+V)."); }
-      if (!navigator.clipboard || !navigator.clipboard.readText) { fallback(); return; }
-      navigator.clipboard.readText().then(function (text) {
-        if (!text || !text.trim()) { toast("Your clipboard is empty. Copy the transcript first."); return; }
-        if (ta.value.trim() && !window.confirm("Replace the transcript that's already here?")) return;
-        ta.value = text.trim();
-        markDirty(true);
-        toast(hasTimestamps(text) ? "Pasted. It has timestamps: click \"Clean text\" to remove them." : "Transcript pasted. Remember to save.");
-      }, fallback);
-    });
-    $("#ins-clean", root).addEventListener("click", function () {
-      if (!ta.value.trim()) { toast("Paste a transcript first"); return; }
-      if (!hasTimestamps(ta.value)) { toast("No timestamps found, it's already clean"); return; }
-      ta.value = cleanTranscript(ta.value);
-      markDirty(true);
-      toast("Timestamps removed. Remember to save.");
-    });
+    $(".modal-card").classList.add("wide");
+    var tr = $("#f-transcript"); if (tr) tr.classList.add("tall");
+    if (banner) $("#modal-body").insertAdjacentHTML("afterbegin", '<div class="notice info">' + esc(banner) + "</div>");
   }
 
   /* ---------------------------------------------------------------
