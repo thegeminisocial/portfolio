@@ -47,11 +47,13 @@ a { color: inherit; }
 .back:hover { background: rgba(249, 243, 237, .12); }
 
 /* The policy: one narrow, easy-to-read column */
-.policy { max-width: 700px; margin: clamp(32px, 6vw, 64px) auto; padding: clamp(28px, 5vw, 56px); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); overflow-wrap: break-word; text-align: center; }
+.policy { max-width: 700px; margin: clamp(32px, 6vw, 64px) auto; padding: clamp(28px, 5vw, 56px); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); overflow-wrap: break-word; }
 .policy h1 { font-size: clamp(2.6rem, 7vw, 3.6rem); margin-bottom: 8px; }
 .policy .updated { color: var(--navy-soft); font-size: .95rem; margin-bottom: 2em; }
 .policy h2 { font-size: clamp(1.6rem, 4.5vw, 2rem); margin: 1.8em 0 .5em; }
-.policy ul { margin: 0 0 1em; padding: 0; list-style-position: inside; }
+.policy ul { margin: 0 0 1em; padding-left: 1.3em; }
+.policy p, .policy li { text-align: justify; }
+.policy .updated, .policy address { text-align: left; }
 .policy li { margin-bottom: .4em; }
 .policy li::marker { color: var(--gold); }
 .policy a { color: var(--navy); font-weight: 500; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 3px; }
