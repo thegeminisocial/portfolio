@@ -1086,23 +1086,22 @@ section { position: relative; }
   <div class="modal-backdrop" data-close></div>
   <div class="modal-card">
     <button class="modal-close" type="button" data-close aria-label="Close">&times;</button>
-    <p class="eyebrow">Free audit</p>
-    <h2 id="capture-title">Is your social media actually <em>working</em>?</h2>
+    <p class="eyebrow">Free download</p>
+    <h2 id="capture-title">Get my free social media <em>audit</em></h2>
     <form id="capture-form" novalidate>
       <div class="hp" aria-hidden="true"><input name="website" type="text" tabindex="-1" autocomplete="off" aria-label="Leave this empty"></div>
-      <p>Score your profile, content, audience and numbers with the same audit I run for new clients. Five areas, a total out of 25, and your top three fixes.</p>
+      <p>A simple guide that shows you what's working on your social media, what isn't, and what to fix first. It's the same one I use with new clients.</p>
       <div class="field"><label for="g-name">Name</label><input id="g-name" name="name" type="text" autocomplete="name" required placeholder="Your name"></div>
       <div class="field"><label for="g-email">Email</label><input id="g-email" name="email" type="email" autocomplete="email" required placeholder="you@yourbusiness.com"></div>
       <p class="send-error" id="capture-error" role="alert" hidden></p>
-      <button class="btn btn-gold" type="submit">Get the free audit</button>
-      <p class="form-note">I'll email you a copy too. Confirm your email to get it, plus occasional tips. Unsubscribe any time. <a href="privacy/">Privacy Policy</a></p>
+      <button class="btn btn-gold" type="submit">Send me the audit</button>
+      <p class="form-note">I'll email it to you. Unsubscribe any time. <a href="privacy/">Privacy Policy</a></p>
     </form>
     <div class="confirm" id="capture-confirm" role="status" aria-live="polite" tabindex="-1">
       <div class="big-star" aria-hidden="true"></div>
-      <h3>Here's your audit</h3>
-      <p>Grab a coffee, be honest with your scores, and pick your three priorities. If you'd like a hand fixing them, that's where I come in.</p>
-      <a class="btn btn-gold" href="lead-magnets/social-media-audit.pdf" target="_blank" rel="noopener">Download the audit</a>
-      <p class="form-note">Check your inbox to confirm your email and I'll send a copy there as well.</p>
+      <h3>Check your inbox</h3>
+      <p>I've sent you an email. Click the button in it to confirm, and your audit will arrive straight after.</p>
+      <p class="form-note">Can't see it? Check your junk or spam folder.</p>
       <p class="form-note"><a href="#" data-link="call">Book a free discovery call</a></p>
     </div>
     <svg class="constellation modal-constellation" aria-hidden="true"><use href="#gemini"/></svg>
@@ -1780,9 +1779,9 @@ const MAILERLITE_EXTRA = { "ml-submit": "1", "anticsrf": "true" };
     const done = () => { captureForm.style.display = "none"; captureConfirm.classList.add("show"); captureConfirm.focus(); };
     if (captureForm.elements.website.value) { done(); return; } // spam bot
     // Both happen separately: if one fails or is slow, the other still goes,
-    // and the visitor always gets the download straight away.
-    try { saveLead({ name, email, notes: "Asked for the social media audit", status: "Lead", source: "Social media audit" }).catch(() => {}); } catch (err) { /* never stop the download */ }
-    try { sendToMailerLite(name, email); } catch (err) { /* never stop the download */ }
+    // and the visitor always sees the "Check your inbox" screen straight away.
+    try { saveLead({ name, email, notes: "Asked for the social media audit", status: "Lead", source: "Social media audit" }).catch(() => {}); } catch (err) { /* never stop the success screen */ }
+    try { sendToMailerLite(name, email); } catch (err) { /* never stop the success screen */ }
     done();
   });
   $$("[data-open-guide]").forEach((b) => b.addEventListener("click", openModal));
