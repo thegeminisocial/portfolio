@@ -97,6 +97,7 @@ img { display: block; max-width: 100%; height: auto; }
 .signup .btn { width: 100%; margin-top: 4px; }
 .fine-print { font-size: .82rem; color: var(--navy-soft); margin: 14px 0 0; }
 .hp { position: absolute; left: -5000px; }
+.form-error { color: #B3261E; background: #FBE5E2; border-radius: 12px; padding: 10px 14px; font-size: .92rem; margin: 0 0 12px; text-align: center; }
 .thanks { display: none; padding: 10px 0; }
 .thanks.show { display: block; animation: fadeUp .5s ease both; }
 .thanks .big-star { width: 56px; height: 56px; margin: 0 auto 14px; background: var(--gold); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
@@ -166,7 +167,7 @@ footer .hand { font-family: var(--hand); font-size: 1.3rem; color: var(--cream);
         <p class="intro">If you've found your way here, chances are you're ready to pause and take a fresh look at your content. This guide is your invitation to step out of the noise, revisit what really matters in your message and reconnect with the themes you want to be known for.</p>
 
         <div class="signup" id="get-the-guide">
-          <!-- MAILING LIST: see FORM_ACTION in the script at the bottom of this page -->
+          <!-- SIGN UP: saves to your Leads and sends to MailerLite (see js/leads.js) -->
           <form id="signup-form" novalidate>
             <h2>Get your free <em>copy</em></h2>
             <p>Pop your details below and I'll send the Content Pillar Builder straight to your inbox.</p>
@@ -174,6 +175,7 @@ footer .hand { font-family: var(--hand); font-size: 1.3rem; color: var(--cream);
             <div class="field"><label for="email">Email</label><input id="email" name="EMAIL" type="email" autocomplete="email" required placeholder="you@yourbusiness.com"></div>
             <!-- Spam trap: real people never see or fill this -->
             <div class="hp" aria-hidden="true"><input type="text" name="b_website" tabindex="-1" autocomplete="off"></div>
+            <p class="form-error" id="signup-error" role="alert" hidden></p>
             <button class="btn btn-gold" type="submit">Send me the guide &#10022;</button>
             <p class="fine-print">No spam. Just thoughtful resources and occasional updates. You can unsubscribe at any time.</p>
           </form>
@@ -210,48 +212,39 @@ footer .hand { font-family: var(--hand); font-size: 1.3rem; color: var(--cream);
   </div>
 </footer>
 
-<!-- Hidden frame so the form can send to your email platform without leaving the page -->
-<iframe name="signup-target" title="Form submission" hidden></iframe>
-
 <script>
 /* =====================================================================
-   MAILING LIST CONNECTION
-   FORM_ACTION: paste the "action" link from your email platform's
-   embedded sign-up form, between the quotes.
-
-   Mailchimp: Audience > Signup forms > Embedded forms. In the code it
-   gives you, copy the link inside action="..." It looks like:
-   https://xxxx.us21.list-manage.com/subscribe/post?u=...&id=...
-   The fields here are already named EMAIL and FNAME, which is what
-   Mailchimp expects. Then set up a Mailchimp welcome email that sends
-   the guide automatically.
-
-   While it's "", the form only shows the thank-you message and
-   NOTHING is saved or sent.
+   SIGN UP FORM
+   Each sign up is saved to your Leads (source "Content pillars guide")
+   and sent to MailerLite, separately. The MailerLite address for this
+   form is in js/leads.js (MAILERLITE_FORMS.contentPillars).
    ===================================================================== */
-const FORM_ACTION = "";
-
 (function () {
   "use strict";
   document.documentElement.classList.add("js");
   const form = document.getElementById("signup-form");
   const thanks = document.getElementById("thanks");
 
-  if (FORM_ACTION) {
-    form.action = FORM_ACTION;
-    form.method = "post";
-    form.target = "signup-target";
-  }
+  const errorBox = document.getElementById("signup-error");
+  const looksLikeEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+  const showError = (msg, field) => { errorBox.textContent = msg; errorBox.hidden = false; field.setAttribute("aria-invalid", "true"); field.focus(); };
+  const showThanks = () => { form.style.display = "none"; thanks.classList.add("show"); thanks.focus(); };
 
   form.addEventListener("submit", (e) => {
-    if (!form.checkValidity()) { e.preventDefault(); form.reportValidity(); return; }
-    if (form.elements.b_website.value) { e.preventDefault(); return; } // bot
-    if (!FORM_ACTION) e.preventDefault();
-    setTimeout(() => {
-      form.style.display = "none";
-      thanks.classList.add("show");
-      thanks.focus();
-    }, FORM_ACTION ? 400 : 0);
+    e.preventDefault();
+    const nameField = form.elements.FNAME, emailField = form.elements.EMAIL;
+    errorBox.hidden = true;
+    nameField.removeAttribute("aria-invalid"); emailField.removeAttribute("aria-invalid");
+    const name = nameField.value.trim().slice(0, 200), email = emailField.value.trim().slice(0, 320);
+    if (!name) { showError("Please add your first name.", nameField); return; }
+    if (!looksLikeEmail(email)) { showError("Please check your email address.", emailField); return; }
+    if (form.elements.b_website.value) { showThanks(); return; } // spam bot
+    // Both happen separately: if one fails or is slow, the other still goes,
+    // and the visitor always sees the thank-you message straight away.
+    const leads = window.tgsLeads;
+    try { if (leads) leads.saveLead({ name, email, notes: "Asked for the Content Pillar Builder", status: "Lead", source: "Content pillars guide" }).catch(() => {}); } catch (err) { /* never stop the thank-you */ }
+    try { if (leads && window.MAILERLITE_FORMS) leads.sendToMailerLite(window.MAILERLITE_FORMS.contentPillars, name, email); } catch (err) { /* never stop the thank-you */ }
+    showThanks();
   });
 
   document.getElementById("year").textContent = new Date().getFullYear();
@@ -270,6 +263,8 @@ const FORM_ACTION = "";
 <!-- Anonymous visit counter for your admin's Portfolio tab -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/db.js"></script>
+<!-- Sign ups: saving leads and sending to MailerLite -->
+<script src="js/leads.js"></script>
 <script src="js/visit.js"></script>
 </body>
 </html>
