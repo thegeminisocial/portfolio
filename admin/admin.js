@@ -358,7 +358,7 @@
      --------------------------------------------------------------- */
   var STATUS = ["Lead", "Talking", "Proposal sent", "Client", "Not now"];
   var STATUS_COLOUR = { "Lead": "navy", "Talking": "gold", "Proposal sent": "purple", "Client": "green", "Not now": "" };
-  var SOURCES = ["Contact form", "Pricing guide", "Referral", "Instagram", "Other"];
+  var SOURCES = ["Contact form", "Social media audit", "Pricing guide", "Referral", "Instagram", "Other"];
   var STAGES = ["Proposal", "Onboarding", "Active", "Paused", "Finished"];
   var STAGE_COLOUR = { "Proposal": "purple", "Onboarding": "navy", "Active": "green", "Paused": "gold", "Finished": "" };
   var TYPES = ["Monthly package", "One-off job"];
