@@ -3,7 +3,7 @@
    Plain JavaScript, no framework. Reads and writes your Supabase tables.
    Each tab is drawn by its own function further down (renderPortfolio,
    renderLeads, renderClients, renderCalendar, renderResults,
-   renderChecklists, renderNumbers).
+   renderChecklists, renderNumbers, renderScripts, renderSeo).
    If a table is missing, that tab says so and everything else carries on.
    ===================================================================== */
 (function () {
@@ -91,7 +91,9 @@
     image: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>',
     whatsapp: '<svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M4 20l1.3-4A8 8 0 1 1 8 19z"/></svg>',
     mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
-    play: '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>'
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
+    external: '<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>'
   };
 
   /* ---------------------------------------------------------------
@@ -122,7 +124,7 @@
     var code = (error && error.code) || "";
     var msg = (error && error.message) || "";
     if (code === "PGRST205" || code === "42P01" || /could not find the table/i.test(msg) || (/relation/i.test(msg) && /does not exist/i.test(msg))) {
-      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : "db.sql") + " to create it. Everything else keeps working.");
+      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : table === "seo_keywords" ? "sql-seo.sql" : "db.sql") + " to create it. Everything else keeps working.");
       return "missing";
     }
     if (code === "PGRST204" || code === "42703" || /column/i.test(msg)) {
@@ -374,6 +376,7 @@
   var TABS = {
     portfolio: { title: "Portfolio", render: renderPortfolio },
     leads: { title: "Leads", render: renderLeads },
+    seo: { title: "SEO", render: renderSeo },
     clients: { title: "Clients and jobs", render: renderClients },
     calendar: { title: "Calendar", render: renderCalendar },
     results: { title: "Results", render: renderResults },
@@ -1655,6 +1658,326 @@
     $(".modal-card").classList.add("wide");
     var tr = $("#f-transcript"); if (tr) tr.classList.add("tall");
     if (banner) $("#modal-body").insertAdjacentHTML("afterbegin", '<div class="notice info">' + esc(banner) + "</div>");
+  }
+
+  /* =================================================================
+     9. SEO (my site)
+     A checker and a to do list, not an editor. Four parts:
+     page health (reads sitemap.xml and checks every page), the SEO
+     checklist (saved in "ticks", items in js/library.js), quick links,
+     and keywords (the "seo_keywords" table, made by sql-seo.sql).
+     If one part can't load, it says so and the others carry on.
+     ================================================================= */
+  var SEO_TITLE_MAX = 60;
+  var SEO_DESC_MAX = 155;
+  // Leftover template text, like "Brand 04", "Client 01" or "[00]"
+  var SEO_PLACEHOLDERS = [/\bBrand ?0\d\b/gi, /\bClient ?0\d\b/gi, /\[\d{2}\]/g, /lorem ipsum/gi];
+  var SEO_LINKS = [
+    { label: "Google Search Console", url: "https://search.google.com/search-console" },
+    { label: "Google Business Profile", url: "https://business.google.com" },
+    { label: "My sitemap", url: "https://thegeminisocial.com/sitemap.xml" },
+    { label: "Test a page with Google", url: "https://search.google.com/test/rich-results" }
+  ];
+  var KW_TYPES = ["Local", "Overseas", "AI question"];
+  var KW_COLOUR = { "Local": "navy", "Overseas": "purple", "AI question": "teal" };
+  var KW_PAGES = ["Homepage", "Packages", "FAQ", "Content Pillar Builder", "Privacy Policy"];
+  var seoState = { health: null, running: null, open: {} };
+
+  // Fetch that gives up after 15 seconds, and never uses an old copy
+  function seoFetch(url) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
+    return fetch(url, { cache: "no-store", signal: ctrl ? ctrl.signal : undefined }).then(
+      function (res) { clearTimeout(timer); return res; },
+      function (e) { clearTimeout(timer); throw e; });
+  }
+  // The address to load: the same page on whichever site the admin is open on
+  function seoFetchUrl(loc) {
+    try {
+      var u = new URL(loc);
+      return /^https?:$/.test(location.protocol) ? location.origin + u.pathname + u.search : u.href;
+    } catch (e) { return loc; }
+  }
+  function seoPath(loc) { try { return new URL(loc).pathname || "/"; } catch (e) { return loc; } }
+  function seoPageName(loc) { var p = seoPath(loc); return p === "/" ? "/ (home page)" : p; }
+
+  // Load one page. Clean addresses like /faq also try /faq.html.
+  function seoLoadPage(loc) {
+    var url = seoFetchUrl(loc);
+    return seoFetch(url).then(function (res) {
+      if (res.ok) return res.text();
+      var path = seoPath(loc);
+      if (res.status === 404 && !/\.[a-z0-9]+$/i.test(path) && path.slice(-1) !== "/") {
+        return seoFetch(url.replace(/(\?|$)/, ".html$1")).then(function (r2) {
+          if (r2.ok) return r2.text();
+          throw new Error("error " + r2.status);
+        });
+      }
+      throw new Error("error " + res.status);
+    });
+  }
+
+  // Look at one page and list what needs attention
+  function seoCheckPage(loc, html) {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    function attr(sel, name) { var el = doc.querySelector(sel); return el ? (el.getAttribute(name) || "").replace(/\s+/g, " ").trim() : ""; }
+    var titleEl = doc.querySelector("title");
+    var p = {
+      loc: loc,
+      ok: true,
+      title: titleEl ? titleEl.textContent.replace(/\s+/g, " ").trim() : "",
+      description: attr('meta[name="description" i]', "content"),
+      h1: doc.querySelectorAll("h1").length,
+      image: attr('meta[property="og:image" i]', "content") || attr('meta[name="twitter:image" i]', "content"),
+      canonical: attr('link[rel~="canonical" i]', "href"),
+      noAlt: $$("img", doc).filter(function (img) { return !img.hasAttribute("alt"); }).length,
+      placeholders: [],
+      dupTitle: [],
+      dupDesc: []
+    };
+    var source = html.replace(/<!--[\s\S]*?-->/g, " ");
+    SEO_PLACEHOLDERS.forEach(function (re) {
+      (source.match(re) || []).forEach(function (m) { if (p.placeholders.indexOf(m) === -1) p.placeholders.push(m); });
+    });
+    return p;
+  }
+
+  // Every issue for one page, as plain sentences
+  function seoIssues(p) {
+    if (!p.ok) return ["The page couldn't be loaded (" + p.error + "). Check the address in sitemap.xml is right."];
+    var out = [];
+    if (!p.title) out.push("Title is missing");
+    else if (p.title.length > SEO_TITLE_MAX) out.push("Title is " + p.title.length + " characters, should be " + SEO_TITLE_MAX + " or fewer");
+    if (!p.description) out.push("Description is missing");
+    else if (p.description.length > SEO_DESC_MAX) out.push("Description is " + p.description.length + " characters, should be " + SEO_DESC_MAX + " or fewer");
+    if (p.h1 === 0) out.push("No main heading (H1)");
+    else if (p.h1 > 1) out.push(p.h1 + " main headings (H1), should be only one");
+    if (!p.image) out.push("No sharing image (og:image)");
+    if (!p.canonical) out.push("No canonical link");
+    if (p.noAlt) out.push(plural(p.noAlt, "image") + " missing a description (alt text)");
+    if (p.dupTitle.length) out.push("Same title as " + p.dupTitle.join(", "));
+    if (p.dupDesc.length) out.push("Same description as " + p.dupDesc.join(", "));
+    if (p.placeholders.length) out.push("Placeholder text found: " + p.placeholders.join(", "));
+    return out;
+  }
+
+  // Read sitemap.xml, check every page. Always resolves, never throws.
+  function seoCheckSite() {
+    var ranAt = new Date();
+    return seoFetch("../sitemap.xml").then(function (res) {
+      if (res.status === 404) return { error: "missing", ranAt: ranAt };
+      if (!res.ok) return { error: "unreadable", detail: "error " + res.status, ranAt: ranAt };
+      return res.text().then(function (xml) {
+        var doc = new DOMParser().parseFromString(xml, "application/xml");
+        if (doc.getElementsByTagName("parsererror").length) return { error: "unreadable", detail: "the file has a mistake in it", ranAt: ranAt };
+        var locs = Array.prototype.map.call(doc.getElementsByTagName("loc"), function (el) { return el.textContent.trim(); })
+          .filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+        if (!locs.length) return { error: "unreadable", detail: "it has no pages listed", ranAt: ranAt };
+        return Promise.all(locs.map(function (loc) {
+          return seoLoadPage(loc).then(function (html) { return seoCheckPage(loc, html); },
+            function (e) { return { loc: loc, ok: false, error: e && e.name === "AbortError" ? "it took too long" : (e && e.message) || "no answer" }; });
+        })).then(function (pages) {
+          // Pages that share a title or a description
+          pages.forEach(function (a) {
+            if (!a.ok) return;
+            pages.forEach(function (b) {
+              if (a === b || !b.ok) return;
+              if (a.title && a.title === b.title) a.dupTitle.push(seoPath(b.loc));
+              if (a.description && a.description === b.description) a.dupDesc.push(seoPath(b.loc));
+            });
+          });
+          pages.forEach(function (p) { p.issues = seoIssues(p); });
+          return { pages: pages, ranAt: ranAt };
+        });
+      });
+    }).catch(function (e) {
+      return { error: "network", detail: (e && e.message) || "", ranAt: ranAt };
+    });
+  }
+  function runSeoCheck() {
+    if (!seoState.running) {
+      seoState.running = seoCheckSite().then(function (h) { seoState.health = h; seoState.running = null; return h; });
+    }
+    return seoState.running;
+  }
+  function seoWhen(d) { return fmtDate(iso(d)) + " at " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+
+  // Plain text list of issues, ready to paste to Claude
+  function seoIssuesText(h) {
+    var bad = h.pages.filter(function (p) { return p.issues.length; });
+    var good = h.pages.filter(function (p) { return !p.issues.length; });
+    var lines = ["SEO issues on my website, from the check on " + seoWhen(h.ranAt) + ".", "Please fix these:", ""];
+    bad.forEach(function (p) {
+      lines.push(seoPageName(p.loc) + " (" + p.loc + ")");
+      p.issues.forEach(function (i) { lines.push("- " + i); });
+      lines.push("");
+    });
+    if (good.length) lines.push("Pages with no issues: " + good.map(function (p) { return seoPath(p.loc); }).join(", "));
+    return lines.join("\n").trim();
+  }
+
+  function seoHealthHTML(h) {
+    var html = "";
+    if (h.error) {
+      var why = {
+        missing: "<strong>Your sitemap.xml couldn't be found.</strong>&nbsp;The page check reads the list of your pages from sitemap.xml, so it can't run without it.",
+        unreadable: "<strong>Your sitemap.xml was found, but it couldn't be read (" + esc(h.detail) + ").</strong>&nbsp;The page check reads the list of your pages from it, so it can't run until it's fixed.",
+        network: "<strong>Your site couldn't be reached to run the check.</strong>&nbsp;This usually means there's no internet connection, or the admin was opened from a file on your computer instead of from your website."
+      }[h.error];
+      var fix = h.error === "network"
+        ? "To fix it: check your internet, open the admin from https://thegeminisocial.com/admin/ and click \"Check again\"."
+        : "To fix it: make sure sitemap.xml is uploaded to the main folder of your site on GitHub, next to index.html, with one &lt;url&gt; line per public page. Wait a minute, then click \"Check again\". Or ask Claude: \"My SEO tab says sitemap.xml is " + (h.error === "missing" ? "missing" : "unreadable") + ", please fix it.\"";
+      html += '<div class="notice error">' + why + "<br>" + fix + "</div>";
+      html += '<div class="toolbar"><button type="button" class="btn primary" id="seo-run">' + ICON.refresh + "Check again</button></div>";
+      return html;
+    }
+    var pages = h.pages;
+    var clean = pages.filter(function (p) { return !p.issues.length; }).length;
+    var total = pages.reduce(function (a, p) { return a + p.issues.length; }, 0);
+    html += '<div class="strip">' +
+      stat("Pages checked", fmtNum(pages.length)) +
+      stat("Pages with no issues", fmtNum(clean)) +
+      stat("Issues found", fmtNum(total)) +
+      stat("Last checked", esc(pad(h.ranAt.getHours()) + ":" + pad(h.ranAt.getMinutes())), esc(fmtDate(iso(h.ranAt)))) +
+      "</div>";
+    html += '<div class="toolbar"><button type="button" class="btn primary" id="seo-run">' + ICON.refresh + "Check again</button>" +
+      '<button type="button" class="btn" id="seo-copy">' + ICON.copy + "Copy issues for Claude</button></div>";
+    function warn(text) { return '<span class="tag yellow">' + esc(text) + "</span>"; }
+    function yes() { return '<span class="pill green">Yes</span>'; }
+    function textCell(value, max, dups, what) {
+      if (!value) return '<td>' + warn("Missing") + "</td>";
+      return '<td class="seo-text"><div class="clip" title="' + esc(value) + '">' + esc(value) + '</div><div class="seo-len">' + value.length + " characters" +
+        (value.length > max ? warn("Too long, keep to " + max) : "") + (dups.length ? warn("Same " + what + " as " + dups.join(", ")) : "") + "</div></td>";
+    }
+    html += '<div class="table-wrap"><table class="seo-table"><thead><tr><th>Page</th><th>Title</th><th>Description</th><th>H1</th><th>Sharing image</th><th>Canonical</th><th>Images without alt text</th><th>Placeholder text</th></tr></thead><tbody>' +
+      pages.map(function (p) {
+        var link = '<a href="' + esc(p.loc) + '" target="_blank" rel="noopener" title="' + esc(p.loc) + '">' + esc(seoPageName(p.loc)) + "</a>";
+        if (!p.ok) return '<tr><td class="nowrap">' + link + '</td><td colspan="7">' + warn("Couldn't load this page (" + p.error + ")") + "</td></tr>";
+        return "<tr>" +
+          '<td class="nowrap">' + link + (p.issues.length ? '<div class="seo-len">' + plural(p.issues.length, "issue") + "</div>" : '<div><span class="pill green">All good</span></div>') + "</td>" +
+          textCell(p.title, SEO_TITLE_MAX, p.dupTitle, "title") +
+          textCell(p.description, SEO_DESC_MAX, p.dupDesc, "description") +
+          '<td class="nowrap">' + (p.h1 === 1 ? "1" : p.h1 + warn(p.h1 ? "Should be one" : "Missing")) + "</td>" +
+          "<td>" + (p.image ? yes() : warn("Missing")) + "</td>" +
+          "<td>" + (p.canonical ? yes() : warn("Missing")) + "</td>" +
+          '<td class="nowrap">' + (p.noAlt ? p.noAlt + warn("Add alt text") : "0") + "</td>" +
+          "<td>" + (p.placeholders.length ? warn(p.placeholders.join(", ")) : "None") + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    html += '<p class="seo-note">This checks what is written in each page itself. Things your site adds while a page loads, like portfolio items, are not included.</p>';
+    return html;
+  }
+
+  function renderSeo(root) {
+    var lib = window.Library;
+    return Promise.all([
+      seoState.health ? Promise.resolve(seoState.health) : runSeoCheck(),
+      read("ticks"),
+      read("seo_keywords", function (q) { return q.order("created_at", { ascending: true }); })
+    ]).then(function (r) {
+      var health = r[0];
+      var ticks = {}; r[1].rows.forEach(function (t) { if (t.done) ticks[t.key] = true; });
+      var kwOk = r[2].ok, keywords = r[2].rows;
+      var sections = lib && lib.SEO ? lib.SEO : null;
+      function key(s, it) { return tickKey("seo", "site", "", s.title, it); }
+      function progressFor(list) {
+        var total = 0, done = 0;
+        list.forEach(function (s) { (s.items || []).forEach(function (it) { total++; if (ticks[key(s, it)]) done++; }); });
+        return { total: total, done: done, pct: total ? done / total * 100 : 0 };
+      }
+      function checklistHTML() {
+        if (!sections) return '<div class="notice error"><strong>The SEO checklist didn\'t load.</strong>&nbsp;Check that js/library.js is on your site.</div>';
+        var overall = progressFor(sections);
+        var html = '<div class="card"><div class="card-head"><h2>Overall</h2><span class="muted">' + overall.done + " of " + overall.total + " done (" + Math.round(overall.pct) + "%)</span></div>" + progressBar(overall.pct) + "</div>";
+        sections.forEach(function (s) {
+          var p = progressFor([s]);
+          var isOpen = seoState.open[s.title] !== undefined ? seoState.open[s.title] : true;
+          html += '<details class="section" data-open-key="' + esc(s.title) + '"' + (isOpen ? " open" : "") + "><summary><span>" + esc(s.title) + "</span>" + progressBar(p.pct) + '<span class="count">' + p.done + "/" + p.total + '</span></summary><div class="items">' +
+            (s.items || []).map(function (it) {
+              var k = key(s, it);
+              return '<label class="check"><input type="checkbox" data-key="' + esc(k) + '"' + (ticks[k] ? " checked" : "") + "><span>" + esc(it) + "</span></label>";
+            }).join("") + "</div></details>";
+        });
+        return html;
+      }
+
+      var html = '<h2 class="seo-part">Page health</h2>' + seoHealthHTML(health);
+      html += '<h2 class="seo-part">SEO checklist</h2><div id="seo-check">' + checklistHTML() + "</div>";
+      html += '<h2 class="seo-part">Quick links</h2><div class="card"><div class="seo-links">' + SEO_LINKS.map(function (l) {
+        return '<a class="btn" href="' + esc(l.url) + '" target="_blank" rel="noopener">' + ICON.external + esc(l.label) + "</a>";
+      }).join("") + "</div></div>";
+      html += '<h2 class="seo-part">Keywords</h2><div class="card"><div class="card-head"><h2>Search phrases I want to be found for</h2>' +
+        (kwOk ? '<button type="button" class="btn primary" id="kw-add">' + ICON.plus + "Add keyword</button>" : "") + "</div>";
+      if (!kwOk) {
+        html += '<p class="empty">Your keywords can\'t show until the "seo_keywords" table is ready. See the note at the top. The rest of this tab works as normal.</p>';
+      } else if (!keywords.length) {
+        html += '<p class="empty">No keywords yet. Click "Add keyword" to add the first search phrase you want to be found for.</p>';
+      } else {
+        html += '<div class="table-wrap"><table><thead><tr><th>Phrase</th><th>Page</th><th>Type</th><th>Notes</th></tr></thead><tbody id="kw-body">' +
+          keywords.map(function (k) {
+            return '<tr class="clickable" data-id="' + esc(k.id) + '"><td>' + esc(k.phrase) + exPill(k) + '</td><td class="nowrap">' + esc(k.page) + "</td><td>" + pill(k.type, KW_COLOUR[k.type]) + '</td><td class="clip" title="' + esc(k.notes) + '">' + esc(k.notes) + "</td></tr>";
+          }).join("") + "</tbody></table></div>";
+      }
+      html += "</div>";
+      root.innerHTML = html;
+
+      // Page health buttons
+      var runBtn = $("#seo-run", root);
+      if (runBtn) runBtn.addEventListener("click", function () {
+        runBtn.disabled = true;
+        runBtn.innerHTML = ICON.refresh + "Checking...";
+        seoState.health = null;
+        runSeoCheck().then(function () { if (current === "seo") refresh(); toast("Check finished"); });
+      });
+      var copyBtn = $("#seo-copy", root);
+      if (copyBtn) copyBtn.addEventListener("click", function () {
+        if (!health.pages.some(function (p) { return p.issues.length; })) { toast("No issues to copy, every page looks good"); return; }
+        copyText(seoIssuesText(health)).then(function (ok) { toast(ok ? "Issues copied, paste them to Claude" : "Couldn't copy, please try again", !ok); });
+      });
+
+      // Checklist: open and close sections, tick items
+      root.addEventListener("toggle", function (e) {
+        var d = e.target.closest && e.target.closest("details[data-open-key]");
+        if (d) seoState.open[d.dataset.openKey] = d.open;
+      }, true);
+      function drawChecklist() { $("#seo-check", root).innerHTML = checklistHTML(); }
+      root.addEventListener("change", function (e) {
+        var k = e.target.dataset && e.target.dataset.key;
+        if (!k) return;
+        var on = e.target.checked;
+        if (on) ticks[k] = true; else delete ticks[k];
+        drawChecklist();
+        var job = on ? db.from("ticks").upsert({ key: k, done: true, updated_at: new Date().toISOString() }, { onConflict: "key" }) : db.from("ticks").delete().eq("key", k);
+        write(job, "ticks").then(function (ok) {
+          if (!ok) { if (on) delete ticks[k]; else ticks[k] = true; drawChecklist(); }
+        });
+      });
+
+      // Keywords: add, edit, delete
+      if (!kwOk) return;
+      var byId = {}; keywords.forEach(function (k) { byId[k.id] = k; });
+      function kwForm(k) {
+        openForm({
+          title: k ? "Edit keyword" : "Add keyword",
+          values: k || { type: "Local" },
+          fields: [
+            { name: "phrase", label: "Search phrase", required: true, full: true, placeholder: "e.g. social media manager Sunshine Coast" },
+            { name: "page", label: "Page that targets it", list: KW_PAGES },
+            { name: "type", label: "Type", type: "select", options: KW_TYPES },
+            { name: "notes", label: "Notes", type: "textarea" }
+          ],
+          onSave: function (v) {
+            v.is_example = false;
+            return k ? write(db.from("seo_keywords").update(v).eq("id", k.id), "seo_keywords", "Saved") : write(db.from("seo_keywords").insert(v), "seo_keywords", "Keyword added");
+          },
+          onDelete: k ? function () { return write(db.from("seo_keywords").delete().eq("id", k.id), "seo_keywords", "Deleted"); } : null
+        });
+      }
+      $("#kw-add", root).addEventListener("click", function () { kwForm(null); });
+      var body = $("#kw-body", root);
+      if (body) body.addEventListener("click", function (e) {
+        var tr = e.target.closest("tr[data-id]"); if (tr) kwForm(byId[tr.dataset.id]);
+      });
+    });
   }
 
   /* ---------------------------------------------------------------
