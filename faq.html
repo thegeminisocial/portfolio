@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monthly Packages | The Gemini Social</title>
-<meta name="description" content="Two monthly social media packages for Instagram and Facebook, Presence Social and Elevate Social. See exactly what&#x27;s included in each.">
+<title>FAQ | The Gemini Social</title>
+<meta name="description" content="Answers to common questions about working with The Gemini Social, from who I work with to how the process works and what&#x27;s included.">
 <meta name="theme-color" content="#294268">
-<link rel="canonical" href="https://thegeminisocial.com/packages">
+<link rel="canonical" href="https://thegeminisocial.com/faq">
 <!-- Icons -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-48.png" sizes="48x48" type="image/png">
@@ -15,16 +15,16 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Gemini Social">
 <meta property="og:locale" content="en_AU">
-<meta property="og:title" content="Monthly Packages | The Gemini Social">
-<meta property="og:description" content="Two monthly social media packages for Instagram and Facebook, Presence Social and Elevate Social. See exactly what&#x27;s included in each.">
-<meta property="og:url" content="https://thegeminisocial.com/packages">
+<meta property="og:title" content="FAQ | The Gemini Social">
+<meta property="og:description" content="Answers to common questions about working with The Gemini Social, from who I work with to how the process works and what&#x27;s included.">
+<meta property="og:url" content="https://thegeminisocial.com/faq">
 <meta property="og:image" content="https://thegeminisocial.com/media/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Marina's hands on a laptop keyboard, planning content">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Monthly Packages | The Gemini Social">
-<meta name="twitter:description" content="Two monthly social media packages for Instagram and Facebook, Presence Social and Elevate Social. See exactly what&#x27;s included in each.">
+<meta name="twitter:title" content="FAQ | The Gemini Social">
+<meta name="twitter:description" content="Answers to common questions about working with The Gemini Social, from who I work with to how the process works and what&#x27;s included.">
 <meta name="twitter:image" content="https://thegeminisocial.com/media/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -99,27 +99,16 @@ a { color: inherit; }
 .jump a:hover { background: var(--navy); color: var(--cream); border-color: var(--navy); }
 .constellation { position: absolute; width: min(240px, 40vw); right: 4%; top: calc(var(--header-h) + 20px); color: var(--gold); opacity: .4; pointer-events: none; }
 
-/* Package cards */
-.packages { display: grid; gap: clamp(24px, 4vw, 40px); padding-bottom: clamp(56px, 8vw, 96px); }
-.package { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(24px, 4vw, 56px); background: var(--white); border-radius: var(--radius-lg); padding: clamp(28px, 5vw, 56px); box-shadow: var(--shadow-soft); position: relative; overflow: hidden; }
-.package.dark { background: var(--navy); color: var(--cream); }
-.package-num { width: 52px; height: 52px; border-radius: 50%; background: var(--navy); color: var(--gold); display: grid; place-items: center; font-family: var(--serif); font-size: 1.4rem; margin-bottom: 18px; }
-.package.dark .package-num { background: var(--gold); color: var(--navy); }
-.package h2 { font-size: clamp(2.4rem, 5vw, 3.6rem); margin-bottom: 6px; }
-.package h2 em { font-style: italic; }
-.package .tagline { font-family: var(--hand); font-size: 1.5rem; line-height: 1.25; margin-bottom: 16px; }
-.package .who { color: var(--navy-soft); }
-.package.dark .who { color: #D9E0EA; }
-.package .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
-.inside-title { font-size: clamp(1.3rem, 2.4vw, 1.6rem); font-weight: 400; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 18px; }
-.package.dark .inside-title { color: var(--gold); }
-.inside { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.inside li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; padding: 10px 0; border-bottom: 1px dashed rgba(41, 66, 104, .2); }
-.package.dark .inside li { border-bottom-color: rgba(249, 243, 237, .22); }
-.inside li:last-child { border-bottom: 0; }
-.inside li::before { content: ""; width: 16px; height: 16px; margin-top: 5px; background: var(--gold); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
-.package:not(.dark) .inside li::before { background: var(--navy); }
-.inside .more { font-family: var(--hand); font-size: 1.3rem; }
+/* Questions and answers */
+.faq-list { max-width: 820px; margin: 0 auto clamp(40px, 6vw, 64px); display: grid; gap: 12px; }
+.faq-item { background: var(--white); border-radius: 18px; box-shadow: var(--shadow-soft); }
+.faq-item summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 24px; border-radius: 18px; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary h2 { font-size: clamp(1.3rem, 2.8vw, 1.6rem); line-height: 1.25; }
+.faq-item summary::after { content: "+"; flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--cream); color: var(--navy); font-family: var(--sans); font-size: 1.3rem; transition: transform .25s ease, background-color .25s ease; }
+.faq-item[open] summary::after { transform: rotate(45deg); background: var(--gold); }
+.faq-item p { margin: 0; padding: 0 24px 22px; color: var(--navy-soft); }
+.faq-item a { color: var(--navy); font-weight: 600; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 
 /* Tailor note */
 .tailor { text-align: center; background: var(--cream-2); border-radius: var(--radius-lg); padding: clamp(32px, 5vw, 56px) clamp(20px, 4vw, 48px); margin-bottom: clamp(56px, 8vw, 96px); }
@@ -135,23 +124,13 @@ a { color: inherit; }
 .js .reveal.in { opacity: 1; transform: none; }
 
 /* Centred text */
-.package { text-align: center; }
-.package-num { margin-inline: auto; }
-.package .actions { justify-content: center; }
-.inside li { display: flex; justify-content: center; align-items: center; gap: 10px; }
-.inside li::before { margin-top: 0; flex: none; }
-.inside li.more { justify-content: center; }
-.inside li.more::before { display: none; }
 .site-footer .wrap { justify-content: center; text-align: center; gap: 8px 28px; }
 
-@media (max-width: 860px) {
-  .package { grid-template-columns: 1fr; }
-}
 @media (max-width: 640px) {
   :root { --gutter: 16px; --header-h: 64px; }
   .logo { font-size: 1.35rem; }
   .nav-actions .back span { display: none; }
-  .package .actions .btn, .tailor .actions .btn { width: 100%; }
+  .tailor .actions .btn { width: 100%; }
   .constellation { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -160,6 +139,63 @@ a { color: inherit; }
   .js .reveal { opacity: 1; transform: none; }
 }
 </style>
+<!-- FAQ details for Google and AI tools (same questions and answers as on the page) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does The Gemini Social do?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "I manage Instagram and Facebook for small businesses. That covers strategy, content calendars, turning your photos and videos into posts and reels, captions in your brand's voice, and a monthly results report."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who do you work with?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "I specialise in wellness and wellbeing businesses, and I work with small businesses of all kinds that care about showing up well online. My clients include fitness and Pilates studios, a business coach and property businesses."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you work with clients outside the Sunshine Coast?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. I'm based on the Sunshine Coast, Queensland, and work with businesses anywhere, including clients in New Zealand and the United States."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does it work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It starts with a free discovery call. From there you fill in an onboarding form, we have a strategy call, and I create your content calendar and posts. Nothing goes live until you've approved it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to provide photos and videos?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. I work with your own images and videos and edit them into finished content. If you're a Sunshine Coast business, we can also talk about me creating content for you in person."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What do your packages include?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Every package is tailored to the business. You can see the starting points on the Packages page, and we shape the details together on your discovery call."
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -168,7 +204,7 @@ a { color: inherit; }
   <nav class="wrap nav" aria-label="Main">
     <a class="logo" href="/">The Gemini <em>Social</em> <span class="star" aria-hidden="true">&#10022;</span></a>
     <div class="nav-actions">
-      <a class="back" href="/#services">&larr; <span>Back to home</span></a>
+      <a class="back" href="/">&larr; <span>Back to home</span></a>
       <a class="cta" href="#" data-link="call">Book a call</a>
     </div>
   </nav>
@@ -189,22 +225,48 @@ a { color: inherit; }
       </g>
     </svg>
     <div class="wrap">
-      <p class="eyebrow">Monthly packages</p>
-      <h1 id="page-title">What's inside each <em>package</em></h1>
-      <p>Every package is built around your business, your voice and your goals. Here's exactly what you get, so you can see which one feels right.</p>
-      <ul class="jump" id="jump"></ul>
+      <p class="eyebrow">Good to know</p>
+      <h1 id="page-title">Questions, <em>answered</em></h1>
+      <p>A few of the things people ask me most about working together.</p>
     </div>
   </section>
 
-  <!-- Package cards are built from PACKAGES in the script below -->
-  <div class="wrap packages" id="packages"></div>
-
+  <!-- ================= QUESTIONS AND ANSWERS =================
+       To change the wording, edit it here AND in the matching
+       "FAQ details for Google" block at the top of this page. -->
   <div class="wrap">
+    <div class="faq-list">
+      <details class="faq-item reveal">
+        <summary><h2>What does The Gemini Social do?</h2></summary>
+        <p>I manage Instagram and Facebook for small businesses. That covers strategy, content calendars, turning your photos and videos into posts and reels, captions in your brand's voice, and a monthly results report.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary><h2>Who do you work with?</h2></summary>
+        <p>I specialise in wellness and wellbeing businesses, and I work with small businesses of all kinds that care about showing up well online. My clients include fitness and Pilates studios, a business coach and property businesses.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary><h2>Do you work with clients outside the Sunshine Coast?</h2></summary>
+        <p>Yes. I'm based on the Sunshine Coast, Queensland, and work with businesses anywhere, including clients in New Zealand and the United States.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary><h2>How does it work?</h2></summary>
+        <p>It starts with a free discovery call. From there you fill in an onboarding form, we have a strategy call, and I create your content calendar and posts. Nothing goes live until you've approved it.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary><h2>Do I need to provide photos and videos?</h2></summary>
+        <p>Yes. I work with your own images and videos and edit them into finished content. If you're a Sunshine Coast business, we can also talk about me creating content for you in person.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary><h2>What do your packages include?</h2></summary>
+        <p>Every package is tailored to the business. You can see the starting points on the <a href="/packages">Packages page</a>, and we shape the details together on your discovery call.</p>
+      </details>
+    </div>
+
     <section class="tailor reveal" aria-labelledby="tailor-title">
-      <h2 id="tailor-title">Not sure which one <em>fits</em>?</h2>
-      <p>I'm always happy to tailor things to suit where your business is right now. Let's have a relaxed chat about your goals and work it out together.</p>
+      <h2 id="tailor-title">Still have a <em>question</em>?</h2>
+      <p>I'm always happy to chat. Book a free discovery call or send me a message, and I'll reply personally.</p>
       <div class="actions">
-        <a class="btn btn-gold" href="#" data-link="call">Book your free consultation &#10022;</a>
+        <a class="btn btn-gold" href="#" data-link="call">Book a free discovery call &#10022;</a>
         <a class="btn btn-outline" href="/#contact">Send me a message</a>
       </div>
     </section>
@@ -215,94 +277,17 @@ a { color: inherit; }
   <div class="wrap">
     <span>&copy; <span id="year"></span> The Gemini Social</span>
     <a href="/privacy/">Privacy Policy</a>
-    <a href="/faq">FAQ</a>
+    <a href="/faq" aria-current="page">FAQ</a>
     <span class="hand">made with strategy + heart</span>
   </div>
 </footer>
 
 <script>
-/* =====================================================================
-   EDIT YOUR PACKAGES HERE
-   id:      the link name used from the home page (index.html links to packages.html#id)
-   tagline: short handwritten line under the name
-   who:     who the package is for
-   inside:  everything included, one line each
-   ===================================================================== */
-const DISCOVERY_CALL = "https://calendar.app.google/nwmQoBqqzS6sE1ut8";   // same booking link as in index.html
-
-const PACKAGES = [
-  {
-    id: "presence-social",
-    name: "Presence <em>Social</em>",
-    plainName: "Presence Social",
-    tagline: "Your starting point for showing up with intention",
-    who: "For businesses that want a consistent, reliable presence online without the pressure of managing it alone. If you're ready to show up with intention and start building real momentum, this is your starting point.",
-    inside: [
-      "Instagram-led, with Facebook included",
-      "A unique strategy for your business and goals",
-      "Monthly content calendar ideas",
-      "Content curation and editing using your images and videos",
-      "2 posts per week",
-      "4 reels per month",
-      "Captions written in your brand's tone of voice",
-      "Monthly analytics report",
-      "60 minute monthly call"
-    ]
-  },
-  {
-    id: "elevate-social",
-    name: "Elevate <em>Social</em>",
-    plainName: "Elevate Social",
-    tagline: "For businesses ready to grow",
-    who: "If you want to reach new audiences on Instagram while building a loyal local community on Facebook, this is where that happens.",
-    inside: [
-      "Instagram and Facebook, each with their own strategy",
-      "Monthly content calendar ideas",
-      "Content curation and editing using your images and videos",
-      "3 posts per week",
-      "6 reels per month",
-      "1 Facebook-native post per month",
-      "Captions written in your brand's tone of voice",
-      "Monthly analytics report",
-      "60 minute monthly call"
-    ]
-  }
-];
-
 (function () {
   "use strict";
   document.documentElement.classList.add("js");
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-  document.getElementById("jump").innerHTML = PACKAGES.map((p) =>
-    `<li><a href="#${p.id}">${esc(p.plainName)}</a></li>`).join("");
-
-  document.getElementById("packages").innerHTML = PACKAGES.map((p, i) => `
-    <article class="package reveal${i % 2 ? " dark on-dark" : ""}" id="${p.id}" aria-labelledby="${p.id}-title">
-      <div>
-        <span class="package-num" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>
-        <h2 id="${p.id}-title">${p.name}</h2>
-        <p class="tagline">${esc(p.tagline)}</p>
-        <p class="who">${esc(p.who)}</p>
-        <div class="actions">
-          <a class="btn btn-gold" href="#" data-link="call">Book a free consultation</a>
-          <a class="btn ${i % 2 ? "btn-outline-light" : "btn-outline"}" href="mailto:thegeminisocialco@gmail.com?subject=${encodeURIComponent("Question about " + p.plainName)}">Ask about ${esc(p.plainName)}</a>
-        </div>
-      </div>
-      <div>
-        <h3 class="inside-title">What's inside</h3>
-        <ul class="inside">
-          ${p.inside.map((item) => `<li>${esc(item)}</li>`).join("")}
-          <li class="more">and more...</li>
-        </ul>
-      </div>
-    </article>`).join("");
-
-  const call = DISCOVERY_CALL === "DISCOVERY_CALL_LINK" ? "/#contact" : DISCOVERY_CALL;
-  document.querySelectorAll('[data-link="call"]').forEach((a) => {
-    a.href = call;
-    if (/^https?:/.test(call)) { a.target = "_blank"; a.rel = "noopener"; }
-  });
+  const DISCOVERY_CALL = "https://calendar.app.google/nwmQoBqqzS6sE1ut8";   // same booking link as in index.html
+  document.querySelectorAll('[data-link="call"]').forEach((a) => { a.href = DISCOVERY_CALL; a.target = "_blank"; a.rel = "noopener"; });
   document.getElementById("year").textContent = new Date().getFullYear();
 
   const items = document.querySelectorAll(".reveal");

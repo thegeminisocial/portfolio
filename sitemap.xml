@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Every public page of thegeminisocial.com. When you add a new public page,
+     copy one <url> block, change the address, and set lastmod to the date. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://thegeminisocial.com/</loc><lastmod>2026-10-07</lastmod></url>
+  <url><loc>https://thegeminisocial.com/packages</loc><lastmod>2026-10-07</lastmod></url>
+  <url><loc>https://thegeminisocial.com/faq</loc><lastmod>2026-10-07</lastmod></url>
+  <url><loc>https://thegeminisocial.com/content-pillars</loc><lastmod>2026-10-07</lastmod></url>
+  <url><loc>https://thegeminisocial.com/privacy/</loc><lastmod>2026-10-07</lastmod></url>
+</urlset>

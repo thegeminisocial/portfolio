@@ -1,0 +1,24 @@
+# The Gemini Social: rules for search engines and AI tools.
+# Everyone may read the public pages. The admin, the sign in page and the
+# free guides (only for people who sign up) are kept out.
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login/
+Disallow: /lead-magnets/
+
+# AI tools: explicitly welcome to read the public pages, same rules as above.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /login/
+Disallow: /lead-magnets/
+
+Sitemap: https://thegeminisocial.com/sitemap.xml
