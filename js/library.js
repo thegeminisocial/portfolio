@@ -1,6 +1,7 @@
 /* =====================================================================
    THE GEMINI SOCIAL: CHECKLIST TEMPLATES
-   These are the two checklists in the Checklists tab of your admin.
+   These are the two checklists in the Checklists tab of your admin,
+   plus the SEO checklist in the SEO tab.
    You can edit the wording, add or remove items, and add sections.
    Keep the same shape: a section has a "title" and a list of "items",
    each item written between quotes and followed by a comma.
@@ -100,6 +101,42 @@ window.Library = {
         "Canva report created",
         "report sent to client",
         "check in call done"
+      ]
+    }
+  ],
+
+  /* ---- SEO (for your own website, in the SEO tab) ---- */
+  SEO: [
+    {
+      title: "Google",
+      items: [
+        "Google Business Profile is verified",
+        "Business Profile description mentions Sunshine Coast and who I help",
+        "Service areas added to the Business Profile",
+        "Photos added to the Business Profile",
+        "Asked past clients for Google reviews",
+        "Google Search Console is verified",
+        "Sitemap submitted in Search Console"
+      ]
+    },
+    {
+      title: "Website",
+      items: [
+        "Every page has a title and description",
+        "Every page has one main heading",
+        "Sharing image shows correctly when I share a link",
+        "Privacy Policy page is published and linked in the footer",
+        "No placeholder text left on the site",
+        "FAQ page is published and linked in the footer"
+      ]
+    },
+    {
+      title: "Being found by AI tools",
+      items: [
+        "The same business description is on my website, Business Profile, Instagram and Facebook",
+        "llms.txt file is published",
+        "Listed in at least three free business directories",
+        "Been a guest on a podcast or featured on another website"
       ]
     }
   ]
