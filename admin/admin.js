@@ -2231,7 +2231,7 @@
         hideTip();
       }
       // Draw once the tab is on screen, so the sky knows its real width
-      requestAnimationFrame(function () { paintSky(); outState.flash = null; });
+      requestAnimationFrame(function () { if (!sky.isConnected) return; paintSky(); outState.flash = null; });
       outState.redrawSky = function () { if (sky.isConnected && Math.abs(sky.clientWidth - n(sky.dataset.w)) > 20) paintSky(); };
 
       /* ---- Filters, kept in sync between the sky and the list ---- */
