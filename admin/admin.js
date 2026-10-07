@@ -3,7 +3,8 @@
    Plain JavaScript, no framework. Reads and writes your Supabase tables.
    Each tab is drawn by its own function further down (renderPortfolio,
    renderLeads, renderClients, renderCalendar, renderResults,
-   renderChecklists, renderNumbers, renderScripts, renderSeo).
+   renderChecklists, renderNumbers, renderScripts, renderSeo,
+   renderOutreach).
    If a table is missing, that tab says so and everything else carries on.
    ===================================================================== */
 (function () {
@@ -124,7 +125,7 @@
     var code = (error && error.code) || "";
     var msg = (error && error.message) || "";
     if (code === "PGRST205" || code === "42P01" || /could not find the table/i.test(msg) || (/relation/i.test(msg) && /does not exist/i.test(msg))) {
-      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : table === "seo_keywords" ? "sql-seo.sql" : "db.sql") + " to create it. Everything else keeps working.");
+      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : table === "seo_keywords" ? "sql-seo.sql" : /^outreach_/.test(table) ? "sql-outreach.sql" : "db.sql") + " to create it. Everything else keeps working.");
       return "missing";
     }
     if (code === "PGRST204" || code === "42703" || /column/i.test(msg)) {
@@ -360,7 +361,7 @@
      --------------------------------------------------------------- */
   var STATUS = ["Lead", "Talking", "Proposal sent", "Client", "Not now"];
   var STATUS_COLOUR = { "Lead": "navy", "Talking": "gold", "Proposal sent": "purple", "Client": "green", "Not now": "" };
-  var SOURCES = ["Contact form", "Social media audit", "Content pillars guide", "Pricing guide", "Referral", "Instagram", "Other"];
+  var SOURCES = ["Contact form", "Social media audit", "Content pillars guide", "Pricing guide", "Referral", "Instagram", "Outreach", "Other"];
   var STAGES = ["Proposal", "Onboarding", "Active", "Paused", "Finished"];
   var STAGE_COLOUR = { "Proposal": "purple", "Onboarding": "navy", "Active": "green", "Paused": "gold", "Finished": "" };
   var TYPES = ["Monthly package", "One-off job"];
@@ -382,6 +383,7 @@
     results: { title: "Results", render: renderResults },
     checklists: { title: "Checklists", render: renderChecklists },
     numbers: { title: "My numbers", render: renderNumbers },
+    outreach: { title: "Outreach", render: renderOutreach },
     scripts: { title: "Scripts", render: renderScripts }
   };
   var current = "portfolio";
@@ -1977,6 +1979,564 @@
       if (body) body.addEventListener("click", function (e) {
         var tr = e.target.closest("tr[data-id]"); if (tr) kwForm(byId[tr.dataset.id]);
       });
+    });
+  }
+
+  /* =================================================================
+     10. OUTREACH (my growth)
+     Everyone you're building a relationship with, drawn as stars in a
+     night sky, with a working list underneath. Tables:
+     "outreach_contacts" and "outreach_touchpoints" (made by
+     sql-outreach.sql). Your weekly goal lives in "settings".
+     If a table is missing, the tab says so and still opens.
+     ================================================================= */
+  var OUT_TYPES = ["Client", "Collaboration", "Speaking", "Community", "Networking", "Event"];
+  var OUT_STAGES = ["To contact", "Contacted", "Talking", "Opportunity", "Landed", "Not now"];
+  var OUT_MET = ["Instagram", "Email", "In person", "Referral", "Event", "Other"];
+  var OUT_TYPE_COLOUR = { "Client": "navy", "Collaboration": "purple", "Speaking": "gold", "Community": "green", "Networking": "teal", "Event": "" };
+  var OUT_STAGE_COLOUR = { "To contact": "", "Contacted": "navy", "Talking": "gold", "Opportunity": "purple", "Landed": "green", "Not now": "" };
+  var OUT_GOAL_KEY = "outreach_weekly_goal";
+  // How each stage looks in the sky: core size, brightness, glow size
+  var OUT_LOOK = {
+    "To contact": { r: 1.4, o: 0.45, glow: 0 },
+    "Contacted": { r: 2.2, o: 0.85, glow: 0 },
+    "Talking": { r: 2.8, o: 0.95, glow: 9 },
+    "Opportunity": { r: 3.6, o: 1, glow: 15 },
+    "Landed": { r: 9, o: 1, glow: 20 },
+    "Not now": { r: 1.9, o: 0.5, glow: 0 }
+  };
+  var outState = {
+    q: "", type: "", stage: "", fav: false, follow: false,
+    sort: { key: "favourite", dir: 1 },
+    flash: null,          // { id, kind: "new" | "up" } for the next draw
+    tipId: null,
+    data: null,
+    redrawSky: null
+  };
+
+  function newId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      return (c === "x" ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function outDays(c) { var d = parseDate(c.next_follow_up); return d ? daysBetween(todayDate(), d) : null; }
+  function outOverdue(c) { var d = outDays(c); return d !== null && d < 0; }
+  function outNeedsFollow(c) { var d = outDays(c); return d !== null && d <= 3; }
+  function outFollowTag(c) {
+    var d = outDays(c);
+    if (d === null) return "";
+    if (d < 0) return '<span class="tag red">' + plural(-d, "day") + " overdue</span>";
+    if (d === 0) return '<span class="tag yellow">Due today</span>';
+    if (d <= 3) return '<span class="tag yellow">Due in ' + plural(d, "day") + "</span>";
+    return "";
+  }
+  function outMatches(c) {
+    var s = outState;
+    if (s.type && c.type !== s.type) return false;
+    if (s.stage && c.stage !== s.stage) return false;
+    if (s.fav && !c.favourite) return false;
+    if (s.follow && !outNeedsFollow(c)) return false;
+    var q = s.q.trim().toLowerCase();
+    return !q || [c.name, c.organisation].some(function (v) { return v && String(v).toLowerCase().indexOf(q) > -1; });
+  }
+  function weekStart() { var d = todayDate(); return addDays(d, -((d.getDay() + 6) % 7)); } // Monday
+
+  // Pick a free spot for a new star inside its type's area (0 to 1)
+  function outPickSpot(others) {
+    var best = null, bestGap = -1;
+    for (var i = 0; i < 24; i++) {
+      var p = { x: 0.08 + Math.random() * 0.84, y: 0.3 + Math.random() * 0.62 };
+      var gap = others.reduce(function (m, o) {
+        if (o.star_x === null || o.star_x === undefined) return m;
+        var dx = p.x - o.star_x, dy = p.y - o.star_y;
+        return Math.min(m, dx * dx + dy * dy);
+      }, 9);
+      if (gap > bestGap) { bestGap = gap; best = p; }
+    }
+    return { star_x: Math.round(best.x * 1000) / 1000, star_y: Math.round(best.y * 1000) / 1000 };
+  }
+
+  // Load everything for the tab. Always resolves.
+  function outLoad() {
+    return Promise.all([
+      read("outreach_contacts", function (q) { return q.order("created_at", { ascending: true }); }),
+      read("outreach_touchpoints", function (q) { return q.order("happened_on", { ascending: false }).order("created_at", { ascending: false }); }),
+      read("settings", function (q) { return q.eq("key", OUT_GOAL_KEY); })
+    ]).then(function (r) {
+      var goal = r[2].rows[0] ? Math.round(n(r[2].rows[0].value)) : 5;
+      outState.data = {
+        contactsOk: r[0].ok, touchOk: r[1].ok, settingsOk: r[2].ok,
+        contacts: r[0].rows, touchpoints: r[1].rows,
+        goal: goal >= 1 ? goal : 5
+      };
+      return outState.data;
+    });
+  }
+
+  /* ---------------- The moon (weekly goal) ---------------- */
+  function moonSVG(frac) {
+    var R = 13, cx = 16, cy = 16;
+    var f = isFinite(frac) ? Math.max(0, Math.min(1, frac)) : 0;
+    var lit = "";
+    if (f >= 0.999) lit = '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" class="moon-lit"/>';
+    else if (f > 0.001) {
+      var rx = Math.abs(1 - 2 * f) * R;
+      lit = '<path class="moon-lit" d="M' + cx + " " + (cy - R) + " A" + R + " " + R + " 0 0 1 " + cx + " " + (cy + R) +
+        " A" + rx.toFixed(2) + " " + R + " 0 0 " + (f < 0.5 ? 0 : 1) + " " + cx + " " + (cy - R) + 'Z"/>';
+    }
+    return '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" class="moon-dark"/>' + lit + "</svg>";
+  }
+
+  /* ---------------- The sky ---------------- */
+  // Small seeded random, so the background dots never move
+  function seeded(seed) { return function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
+  var STAR4 = "0,-1 0.24,-0.24 1,0 0.24,0.24 0,1 -0.24,0.24 -1,0 -0.24,-0.24";
+  function star4(cx, cy, size) {
+    return STAR4.split(" ").map(function (p) { var xy = p.split(","); return (cx + xy[0] * size).toFixed(1) + "," + (cy + xy[1] * size).toFixed(1); }).join(" ");
+  }
+  function drawSky(box, contacts) {
+    var W = Math.max(280, Math.round(box.clientWidth || 800));
+    var narrow = W < 640;
+    var H = narrow ? 270 : 420;
+    var cols = narrow ? 2 : 3, rows = narrow ? 3 : 2;
+    var top = narrow ? 50 : 34, pad = 10;
+    var cw = (W - pad * 2) / cols, ch = (H - top - pad) / rows;
+    var area = {};
+    OUT_TYPES.forEach(function (t, i) {
+      area[t] = { x: pad + (i % cols) * cw, y: top + Math.floor(i / cols) * ch, w: cw, h: ch };
+    });
+    function pos(c) {
+      var a = area[c.type] || area.Client;
+      var sx = c.star_x === null || c.star_x === undefined ? 0.5 : n(c.star_x);
+      var sy = c.star_y === null || c.star_y === undefined ? 0.5 : n(c.star_y);
+      return { x: a.x + 14 + sx * (a.w - 28), y: a.y + 8 + sy * (a.h - 16) };
+    }
+    var rnd = seeded(7);
+    var s = '<svg class="sky-svg" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="Your outreach sky: ' + esc(plural(contacts.length, "star")) + '">' +
+      '<defs><radialGradient id="glow-cream"><stop offset="0" stop-color="#F9F3ED" stop-opacity=".55"/><stop offset="1" stop-color="#F9F3ED" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="glow-gold"><stop offset="0" stop-color="#DF982E" stop-opacity=".6"/><stop offset="1" stop-color="#DF982E" stop-opacity="0"/></radialGradient></defs>';
+    // Faint background dots
+    for (var i = 0; i < Math.round(W / 11); i++) {
+      s += '<circle class="bg-dot" cx="' + (rnd() * W).toFixed(1) + '" cy="' + (rnd() * H).toFixed(1) + '" r="' + (0.4 + rnd() * 0.7).toFixed(2) + '"/>';
+    }
+    // Area labels and constellation lines
+    var placed = {};
+    contacts.forEach(function (c) { placed[c.id] = pos(c); });
+    OUT_TYPES.forEach(function (t) {
+      if (!contacts.length) return; // an empty sky has only its message
+      var a = area[t];
+      var mine = contacts.filter(function (c) { return c.type === t; });
+      var dimType = outState.type && outState.type !== t;
+      s += '<text class="sky-label' + (dimType ? " dim" : "") + '" x="' + (a.x + 14) + '" y="' + (a.y + 14) + '">' + esc(t) + "</text>";
+      var lines = "";
+      for (var k = 1; k < mine.length; k++) {
+        var p = placed[mine[k].id], best = null, bd = Infinity;
+        for (var j = 0; j < k; j++) {
+          var q = placed[mine[j].id], d = (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y);
+          if (d < bd) { bd = d; best = q; }
+        }
+        lines += '<line x1="' + p.x.toFixed(1) + '" y1="' + p.y.toFixed(1) + '" x2="' + best.x.toFixed(1) + '" y2="' + best.y.toFixed(1) + '"/>';
+      }
+      if (lines) s += '<g class="sky-lines' + (dimType ? " dim" : "") + '">' + lines + "</g>";
+    });
+    // The stars
+    contacts.forEach(function (c, idx) {
+      var p = placed[c.id];
+      var look = OUT_LOOK[c.stage] || OUT_LOOK["To contact"];
+      var gold = !!c.favourite;
+      var cls = "star" + (gold ? " gold" : "") + (c.stage === "Not now" ? " notnow" : "") + (outMatches(c) ? "" : " dim");
+      if (outState.flash && outState.flash.id === c.id) cls += outState.flash.kind === "new" ? " star-new" : " star-up";
+      var x = p.x.toFixed(1), y = p.y.toFixed(1);
+      var g = '<g class="' + cls + '" data-id="' + esc(c.id) + '"><g opacity="' + look.o + '">';
+      if (look.glow) g += '<circle class="glow" cx="' + x + '" cy="' + y + '" r="' + look.glow + '" fill="url(#glow-' + (gold ? "gold" : "cream") + ')"/>';
+      if (c.stage === "Landed") {
+        g += '<g class="twinkle" style="animation-delay:-' + ((idx * 0.37) % 3).toFixed(2) + 's">' +
+          '<path class="rays" d="M' + x + " " + (p.y - 17).toFixed(1) + "V" + (p.y + 17).toFixed(1) + "M" + (p.x - 17).toFixed(1) + " " + y + "H" + (p.x + 17).toFixed(1) + '"/>' +
+          '<polygon class="core" points="' + star4(p.x, p.y, look.r) + '"/></g>';
+      } else {
+        g += '<circle class="core" cx="' + x + '" cy="' + y + '" r="' + look.r + '"/>';
+      }
+      if (outOverdue(c)) g += '<circle class="ring" cx="' + x + '" cy="' + y + '" r="' + (look.r + 6).toFixed(1) + '"/>';
+      g += '</g><circle class="hit" cx="' + x + '" cy="' + y + '" r="13"/></g>';
+      s += g;
+    });
+    s += "</svg>";
+    box.style.height = H + "px";
+    box.querySelector(".sky-draw").innerHTML = s;
+    box.dataset.w = W;
+    return placed;
+  }
+
+  var outResize;
+  window.addEventListener("resize", function () {
+    clearTimeout(outResize);
+    outResize = setTimeout(function () { if (current === "outreach" && outState.redrawSky) outState.redrawSky(); }, 150);
+  });
+  function renderOutreach(root) {
+    return outLoad().then(function (D) {
+      var real = D.contacts.filter(function (c) { return !c.is_example; });
+      var byId = {}; D.contacts.forEach(function (c) { byId[c.id] = c; });
+      var examples = {}; D.contacts.forEach(function (c) { if (c.is_example) examples[c.id] = true; });
+      var ws = iso(weekStart()), we = iso(addDays(weekStart(), 6)), yr = String(todayDate().getFullYear());
+      var weekCount = D.touchpoints.filter(function (t) { var d = String(t.happened_on || "").slice(0, 10); return !examples[t.contact_id] && d >= ws && d <= we; }).length;
+      var dueWeek = real.filter(function (c) { return c.next_follow_up && String(c.next_follow_up).slice(0, 10) <= we && c.stage !== "Landed" && c.stage !== "Not now"; });
+      var overdueN = dueWeek.filter(outOverdue).length;
+      var openOpp = real.filter(function (c) { return c.stage === "Opportunity"; }).length;
+      var landedYear = real.filter(function (c) { return c.stage === "Landed" && String(c.landed_on || c.updated_at || "").slice(0, 4) === yr; }).length;
+
+      // Stars without a saved place get one now, and keep it for good
+      if (D.contactsOk) {
+        D.contacts.forEach(function (c) {
+          if (c.star_x === null || c.star_x === undefined || c.star_y === null || c.star_y === undefined) {
+            var spot = outPickSpot(D.contacts.filter(function (o) { return o !== c && o.type === c.type; }));
+            c.star_x = spot.star_x; c.star_y = spot.star_y;
+            db.from("outreach_contacts").update(spot).eq("id", c.id).then(function () { /* saved quietly */ });
+          }
+        });
+      }
+
+      var chips = [{ k: "all", label: "All" }].concat(OUT_TYPES.map(function (t) { return { k: "type:" + t, label: t }; }), [{ k: "fav", label: "Favourites" }, { k: "follow", label: "Needs follow up" }]);
+      var html = '<div class="out-filters" role="group" aria-label="Filter the sky">' + chips.map(function (x) {
+        return '<button type="button" data-chip="' + esc(x.k) + '">' + esc(x.label) + "</button>";
+      }).join("") + "</div>";
+      var frac = D.goal > 0 ? weekCount / D.goal : 0;
+      html += '<div class="sky" id="sky"><div class="sky-draw"></div>' +
+        '<button type="button" class="moon" id="moon" aria-label="Weekly goal: ' + weekCount + " of " + D.goal + ' reach-outs this week. Click to change your goal.">' + moonSVG(frac) +
+        '<span>' + weekCount + " of " + D.goal + "<br>this week</span></button>" +
+        '<div class="sky-tip" id="sky-tip" hidden></div>' +
+        (D.contacts.length ? "" : '<p class="sky-empty">' + (D.contactsOk ? "Your sky is empty for now. Each person you reach out to becomes a star here. Click \"Add contact\" below to place your first one." : "Your sky can't show yet because the outreach tables are missing. See the note at the top.") + "</p>") +
+        "</div>";
+      html += '<div class="strip">' +
+        stat("Contacts in total", fmtNum(real.length)) +
+        stat("Follow ups due this week", fmtNum(dueWeek.length), overdueN ? fmtNum(overdueN) + " overdue" : "") +
+        stat("Opportunities open", fmtNum(openOpp)) +
+        stat("Landed this year", fmtNum(landedYear)) +
+        "</div>";
+      html += '<div class="toolbar"><div class="grow"><input type="search" id="out-q" placeholder="Search name or organisation" value="' + esc(outState.q) + '" aria-label="Search contacts"></div>' +
+        '<select id="out-type" aria-label="Filter by type"><option value="">All types</option>' + OUT_TYPES.map(function (t) { return "<option>" + t + "</option>"; }).join("") + "</select>" +
+        '<select id="out-stage" aria-label="Filter by stage"><option value="">All stages</option>' + OUT_STAGES.map(function (t) { return "<option>" + t + "</option>"; }).join("") + "</select>" +
+        '<div class="seg" role="group" aria-label="Show only"><button type="button" id="out-fav">Favourites</button><button type="button" id="out-follow">Needs follow up</button></div>' +
+        (D.contactsOk ? '<button type="button" class="btn primary" id="out-add">' + ICON.plus + "Add contact</button>" : "") +
+        '<button type="button" class="btn" id="out-csv">' + ICON.download + "Download CSV</button></div>";
+      html += '<div class="table-wrap"><table><thead><tr id="out-head"></tr></thead><tbody id="out-body"></tbody></table></div>';
+      root.innerHTML = html;
+
+      var sky = $("#sky", root), tip = $("#sky-tip", root);
+      var placed = {};
+      function paintSky() {
+        if (!sky.isConnected) return;
+        placed = drawSky(sky, D.contacts);
+        hideTip();
+      }
+      // Draw once the tab is on screen, so the sky knows its real width
+      requestAnimationFrame(function () { paintSky(); outState.flash = null; });
+      outState.redrawSky = function () { if (sky.isConnected && Math.abs(sky.clientWidth - n(sky.dataset.w)) > 20) paintSky(); };
+
+      /* ---- Filters, kept in sync between the sky and the list ---- */
+      function syncControls() {
+        $$(".out-filters button", root).forEach(function (b) {
+          var k = b.dataset.chip, on;
+          if (k === "all") on = !outState.type && !outState.fav && !outState.follow && !outState.stage;
+          else if (k === "fav") on = outState.fav;
+          else if (k === "follow") on = outState.follow;
+          else on = outState.type === k.slice(5);
+          b.setAttribute("aria-pressed", String(on));
+        });
+        $("#out-type", root).value = outState.type;
+        $("#out-stage", root).value = outState.stage;
+        $("#out-fav", root).setAttribute("aria-pressed", String(outState.fav));
+        $("#out-follow", root).setAttribute("aria-pressed", String(outState.follow));
+      }
+      function applyFilters() {
+        syncControls();
+        $$(".star", sky).forEach(function (g) { var c = byId[g.dataset.id]; if (c) g.classList.toggle("dim", !outMatches(c)); });
+        drawList();
+      }
+      $(".out-filters", root).addEventListener("click", function (e) {
+        var b = e.target.closest("button[data-chip]"); if (!b) return;
+        var k = b.dataset.chip;
+        if (k === "all") { outState.type = ""; outState.stage = ""; outState.fav = false; outState.follow = false; }
+        else if (k === "fav") outState.fav = !outState.fav;
+        else if (k === "follow") outState.follow = !outState.follow;
+        else { var t = k.slice(5); outState.type = outState.type === t ? "" : t; }
+        paintSky(); applyFilters();
+      });
+      $("#out-q", root).addEventListener("input", function (e) { outState.q = e.target.value; applyFilters(); });
+      $("#out-type", root).addEventListener("change", function (e) { outState.type = e.target.value; paintSky(); applyFilters(); });
+      $("#out-stage", root).addEventListener("change", function (e) { outState.stage = e.target.value; applyFilters(); });
+      $("#out-fav", root).addEventListener("click", function () { outState.fav = !outState.fav; applyFilters(); });
+      $("#out-follow", root).addEventListener("click", function () { outState.follow = !outState.follow; applyFilters(); });
+
+      /* ---- Tooltip, hover on a computer, tap on a phone ---- */
+      var lastPointer = "mouse";
+      function showTip(id) {
+        var c = byId[id], p = placed[id];
+        if (!c || !p) return;
+        outState.tipId = id;
+        tip.innerHTML = "<strong>" + esc(c.name) + "</strong>" + (c.is_example ? " (example)" : "") + (c.organisation ? "<br>" + esc(c.organisation) : "") + '<br><span class="tip-stage">' + esc(c.stage) + "</span>";
+        tip.hidden = false;
+        var x = Math.min(Math.max(p.x, 80), sky.clientWidth - 80);
+        tip.style.left = x + "px";
+        tip.style.top = p.y + "px";
+        tip.classList.toggle("below", p.y < 80);
+      }
+      function hideTip() { outState.tipId = null; if (tip) tip.hidden = true; }
+      sky.addEventListener("pointerover", function (e) {
+        if (e.pointerType !== "mouse") return;
+        var g = e.target.closest(".star"); if (g) showTip(g.dataset.id);
+      });
+      sky.addEventListener("pointerout", function (e) {
+        if (e.pointerType !== "mouse") return;
+        var g = e.target.closest(".star"); if (g && !g.contains(e.relatedTarget)) hideTip();
+      });
+      sky.addEventListener("pointerdown", function (e) { lastPointer = e.pointerType || "mouse"; });
+      sky.addEventListener("click", function (e) {
+        if (e.target.closest("#moon")) return;
+        var g = e.target.closest(".star");
+        if (!g) { hideTip(); return; }
+        var id = g.dataset.id;
+        if (lastPointer !== "mouse" && outState.tipId !== id) { showTip(id); return; } // first tap shows who it is
+        hideTip();
+        openCard(id);
+      });
+
+      /* ---- The moon: click to change the weekly goal ---- */
+      $("#moon", root).addEventListener("click", function () {
+        openForm({
+          title: "Weekly reach-out goal",
+          values: { goal: D.goal },
+          fields: [{ name: "goal", label: "How many reach-outs a week?", type: "number", required: true, help: "Each touchpoint you log this week (Monday to Sunday) fills the moon a little more." }],
+          onSave: function (v) {
+            var g = Math.round(n(v.goal));
+            if (g < 1) { $("#form-error").textContent = "Please choose a goal of 1 or more."; return false; }
+            return write(db.from("settings").upsert({ key: OUT_GOAL_KEY, value: String(g), updated_at: new Date().toISOString() }, { onConflict: "key" }), "settings", "Goal saved");
+          }
+        });
+      });
+
+      /* ---- The list ---- */
+      var COLS = [
+        { key: "favourite", label: "Star" }, { key: "name", label: "Name" }, { key: "organisation", label: "Organisation" },
+        { key: "type", label: "Type" }, { key: "stage", label: "Stage" }, { key: "how_met", label: "How we met" },
+        { key: "last_contact", label: "Last contact" }, { key: "next_follow_up", label: "Next follow up" }
+      ];
+      function listRows() {
+        var k = outState.sort.key, dir = outState.sort.dir;
+        function byName(a, b) { return String(a.name || "").localeCompare(String(b.name || ""), "en-AU", { sensitivity: "base" }); }
+        return D.contacts.filter(outMatches).sort(function (a, b) {
+          var A = a[k], B = b[k], r;
+          if (k === "favourite") r = ((B ? 1 : 0) - (A ? 1 : 0)) * dir;
+          else if (k === "stage") r = (OUT_STAGES.indexOf(a.stage) - OUT_STAGES.indexOf(b.stage)) * dir;
+          else if (k === "type") r = (OUT_TYPES.indexOf(a.type) - OUT_TYPES.indexOf(b.type)) * dir;
+          else {
+            var eA = A === null || A === undefined || A === "", eB = B === null || B === undefined || B === "";
+            if (eA && eB) r = 0; else if (eA) return 1; else if (eB) return -1;
+            else r = String(A).localeCompare(String(B), "en-AU", { sensitivity: "base" }) * dir;
+          }
+          return r || byName(a, b);
+        });
+      }
+      function drawList() {
+        $("#out-head", root).innerHTML = COLS.map(function (c) {
+          var on = outState.sort.key === c.key;
+          var sign = on ? (outState.sort.dir === 1 ? "&#9650;" : "&#9660;") : "&#8597;";
+          return '<th class="sortable' + (on ? " sorted" : "") + '" data-key="' + c.key + '" aria-sort="' + (on ? (outState.sort.dir === 1 ? "ascending" : "descending") : "none") + '" tabindex="0">' + c.label + '<span class="sort-sign" aria-hidden="true">' + sign + "</span></th>";
+        }).join("");
+        var list = listRows();
+        $("#out-body", root).innerHTML = list.length ? list.map(function (c) {
+          return '<tr class="clickable' + (c.favourite ? " fav" : "") + '" data-id="' + esc(c.id) + '">' +
+            '<td><button type="button" class="icon-btn' + (c.favourite ? " on" : "") + '" data-act="fav" aria-pressed="' + !!c.favourite + '" aria-label="' + (c.favourite ? "Remove from favourites" : "Add to favourites") + '">' + ICON.star + "</button></td>" +
+            '<td class="nowrap">' + esc(c.name) + exPill(c) + "</td>" +
+            "<td>" + esc(c.organisation) + "</td>" +
+            "<td>" + pill(c.type, OUT_TYPE_COLOUR[c.type]) + "</td>" +
+            "<td>" + pill(c.stage, OUT_STAGE_COLOUR[c.stage]) + "</td>" +
+            '<td class="nowrap">' + esc(c.how_met) + "</td>" +
+            '<td class="nowrap">' + esc(fmtDate(c.last_contact)) + "</td>" +
+            '<td class="nowrap">' + esc(fmtDate(c.next_follow_up)) + outFollowTag(c) + "</td></tr>";
+        }).join("") : '<tr><td colspan="8" class="empty">' + (D.contacts.length ? "No contacts match your search or filters." : (D.contactsOk ? "No contacts yet. Click \"Add contact\" to add the first person you want to reach out to." : "Your contacts can't show until the outreach tables are ready. See the note at the top.")) + "</td></tr>";
+      }
+      syncControls();
+      drawList();
+      function sortBy(key) {
+        if (outState.sort.key === key) outState.sort.dir *= -1; else outState.sort = { key: key, dir: 1 };
+        drawList();
+      }
+      $("#out-head", root).addEventListener("click", function (e) { var th = e.target.closest("th[data-key]"); if (th) sortBy(th.dataset.key); });
+      $("#out-head", root).addEventListener("keydown", function (e) { var th = e.target.closest("th[data-key]"); if (th && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); sortBy(th.dataset.key); } });
+      $("#out-body", root).addEventListener("click", function (e) {
+        var tr = e.target.closest("tr[data-id]"); if (!tr) return;
+        var c = byId[tr.dataset.id];
+        if (e.target.closest("[data-act='fav']")) {
+          write(db.from("outreach_contacts").update({ favourite: !c.favourite }).eq("id", c.id), "outreach_contacts", c.favourite ? "Removed from favourites" : "Added to favourites").then(function (ok) { if (ok) refresh(); });
+          return;
+        }
+        openCard(c.id);
+      });
+      $("#out-csv", root).addEventListener("click", function () {
+        var list = listRows();
+        if (!list.length) { toast("There's nothing to download yet"); return; }
+        downloadCSV("outreach-" + today() + ".csv",
+          ["Favourite", "Name", "Organisation", "Type", "Stage", "How we met", "Instagram", "Email", "Link", "Introduced by", "Last contact", "Next follow up", "Notes", "Added on"],
+          list.map(function (c) {
+            var intro = c.introduced_by && byId[c.introduced_by] ? byId[c.introduced_by].name : "";
+            return [c.favourite ? "Yes" : "", c.name, c.organisation, c.type, c.stage, c.how_met, c.instagram, c.email, c.link, intro, fmtDate(c.last_contact), fmtDate(c.next_follow_up), c.notes, fmtDate(c.created_at)];
+          }));
+      });
+
+      /* ---- Add a contact ---- */
+      function fields(c) {
+        var others = D.contacts.filter(function (o) { return !c || o.id !== c.id; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+        return [
+          { name: "name", label: "Name", required: true },
+          { name: "organisation", label: "Organisation" },
+          { name: "type", label: "Type", type: "select", options: OUT_TYPES },
+          { name: "stage", label: "Stage", type: "select", options: OUT_STAGES },
+          { name: "how_met", label: "How we met", type: "select", options: [{ value: "", label: "Not set" }].concat(OUT_MET) },
+          { name: "introduced_by", label: "Introduced by (optional)", type: "select", options: [{ value: "", label: "Nobody" }].concat(others.map(function (o) { return { value: o.id, label: o.name + (o.organisation ? ", " + o.organisation : "") }; })) },
+          { name: "instagram", label: "Instagram (optional)", placeholder: "@theirhandle" },
+          { name: "email", label: "Email (optional)", type: "email" },
+          { name: "link", label: "Link (optional)", type: "url", full: true, placeholder: "https://..." },
+          { name: "last_contact", label: "Last contact", type: "date" },
+          { name: "next_follow_up", label: "Next follow up", type: "date" },
+          { name: "notes", label: "Notes", type: "textarea" },
+          { name: "favourite", label: "Favourite (gold star)", type: "checkbox", full: true }
+        ];
+      }
+      // Fill in the extras every save needs: landed date, a star spot for a new type
+      function prepare(v, old) {
+        if (v.stage === "Landed" && (!old || old.stage !== "Landed")) v.landed_on = today();
+        if (v.stage !== "Landed") v.landed_on = null;
+        if (!old || old.type !== v.type) {
+          var spot = outPickSpot(D.contacts.filter(function (o) { return o.type === v.type && (!old || o.id !== old.id); }));
+          v.star_x = spot.star_x; v.star_y = spot.star_y;
+        }
+        return v;
+      }
+      var addBtn = $("#out-add", root);
+      if (addBtn) addBtn.addEventListener("click", function () {
+        openForm({
+          title: "Add contact",
+          values: { type: outState.type || "Client", stage: "To contact", how_met: "" },
+          fields: fields(null),
+          saveLabel: "Add contact",
+          onSave: function (v) {
+            v = prepare(v, null);
+            v.id = newId();
+            return write(db.from("outreach_contacts").insert(v), "outreach_contacts", "Contact added").then(function (ok) {
+              if (ok) outState.flash = { id: v.id, kind: "new" };
+              return ok;
+            });
+          }
+        });
+      });
+
+      /* ---- The contact card ---- */
+      function openCard(id) {
+        var c = byId[id]; if (!c) return;
+        var F = fields(c);
+        var touches = D.touchpoints.filter(function (t) { return t.contact_id === c.id; });
+        var ig = igLink(c.instagram);
+        var quick = (ig ? '<a class="btn" href="' + esc(ig) + '" target="_blank" rel="noopener">' + ICON.external + "Instagram</a>" : "") +
+          (c.email ? '<a class="btn" href="mailto:' + esc(c.email) + '">' + ICON.external + "Email</a>" : "") +
+          (c.link && /^https?:\/\//i.test(c.link) ? '<a class="btn" href="' + esc(c.link) + '" target="_blank" rel="noopener">' + ICON.external + "Link</a>" : "");
+        var leadBtn = c.type !== "Client" ? "" : (c.lead_id ? '<span class="pill green">Already in Leads</span>' : '<button type="button" class="btn" id="card-lead">' + ICON.plus + "Move to Leads</button>");
+        var html = (c.is_example ? '<div class="notice info">This is the example contact. Look around, then delete it when you\'re ready.</div>' : "") +
+          (quick || leadBtn ? '<div class="card-quick">' + quick + leadBtn + "</div>" : "") +
+          '<form class="form-grid" id="modal-form" novalidate>' + F.map(function (f) { return fieldHTML(f, c[f.name]); }).join("") + "</form>" +
+          '<div class="form-error" id="form-error" role="alert"></div>' +
+          '<div class="form-actions"><button type="button" class="btn danger" id="form-delete">Delete</button>' +
+          '<div class="right"><button type="button" class="btn" data-close>Close</button><button type="button" class="btn primary" id="form-save">Save</button></div></div>' +
+          '<div class="touch"><div class="card-head"><h2>Touchpoints</h2>' + (D.touchOk ? '<button type="button" class="btn" id="tp-open">' + ICON.plus + "Log a touchpoint</button>" : "") + "</div>" +
+          '<div id="tp-box"></div><div id="tp-list"></div></div>';
+        openModal(c.name, html);
+        $(".modal-card").classList.add("wide");
+        var body = $("#modal-body");
+        function drawTouches() {
+          var box = $("#tp-list", body);
+          if (!box) return;
+          if (!D.touchOk) { box.innerHTML = '<p class="empty">Touchpoints can\'t show until the "outreach_touchpoints" table is ready. See the note at the top.</p>'; return; }
+          box.innerHTML = touches.length ? '<ul class="tp-list">' + touches.map(function (t) {
+            return '<li><span class="tp-date">' + esc(fmtDate(t.happened_on)) + "</span><span>" + esc(t.note) + "</span></li>";
+          }).join("") + "</ul>" : '<p class="empty">No touchpoints yet. Click "Log a touchpoint" each time you reach out or hear back.</p>';
+        }
+        drawTouches();
+
+        // Save the fields
+        $("#form-save", body).addEventListener("click", function () {
+          var form = $("#modal-form", body);
+          var v = readForm(form, F);
+          if (!v.name) { $("#form-error", body).textContent = "Please fill in: Name."; return; }
+          v = prepare(v, c);
+          var up = OUT_STAGES.indexOf(v.stage) > OUT_STAGES.indexOf(c.stage) && v.stage !== "Not now";
+          var btn = $("#form-save", body); btn.disabled = true; btn.textContent = "Saving...";
+          write(db.from("outreach_contacts").update(v).eq("id", c.id), "outreach_contacts", "Saved").then(function (ok) {
+            if (ok) { if (up) outState.flash = { id: c.id, kind: "up" }; closeModal(); refresh(); }
+            else { btn.disabled = false; btn.textContent = "Save"; }
+          });
+        });
+        // Delete, with a second click to confirm
+        var del = $("#form-delete", body);
+        del.addEventListener("click", function () {
+          if (!del.classList.contains("confirm")) { del.classList.add("confirm"); del.textContent = "Click again to delete"; return; }
+          del.disabled = true;
+          write(db.from("outreach_contacts").delete().eq("id", c.id), "outreach_contacts", "Deleted").then(function (ok) { if (ok) { closeModal(); refresh(); } else del.disabled = false; });
+        });
+
+        // Log a touchpoint: note, then the next follow up date
+        var tpOpen = $("#tp-open", body);
+        if (tpOpen) tpOpen.addEventListener("click", function () {
+          tpOpen.disabled = true;
+          $("#tp-box", body).innerHTML = '<div class="tp-form"><label for="tp-note">What happened? (saved with today\'s date, ' + esc(fmtDate(today())) + ')</label>' +
+            '<textarea id="tp-note" placeholder="e.g. Sent a DM about a joint workshop"></textarea>' +
+            '<div class="right"><button type="button" class="btn" id="tp-cancel">Cancel</button><button type="button" class="btn primary" id="tp-save">Save touchpoint</button></div></div>';
+          $("#tp-note", body).focus();
+          $("#tp-cancel", body).addEventListener("click", function () { $("#tp-box", body).innerHTML = ""; tpOpen.disabled = false; });
+          $("#tp-save", body).addEventListener("click", function () {
+            var note = $("#tp-note", body).value.trim();
+            if (!note) { $("#tp-note", body).focus(); toast("Please write a short note first", true); return; }
+            var save = $("#tp-save", body); save.disabled = true; save.textContent = "Saving...";
+            var tp = { id: newId(), contact_id: c.id, happened_on: today(), note: note };
+            write(db.from("outreach_touchpoints").insert(tp), "outreach_touchpoints", "Touchpoint saved").then(function (ok) {
+              if (!ok) { save.disabled = false; save.textContent = "Save touchpoint"; return; }
+              touches.unshift(tp);
+              drawTouches();
+              var lc = $("#f-last_contact", body); if (lc) lc.value = today();
+              write(db.from("outreach_contacts").update({ last_contact: today() }).eq("id", c.id), "outreach_contacts").then(function () { c.last_contact = today(); refresh(); });
+              // Ask for the next follow up date
+              var next = iso(addDays(todayDate(), 7));
+              $("#tp-box", body).innerHTML = '<div class="tp-form"><label for="tp-next">When should you follow up next?</label>' +
+                '<input type="date" id="tp-next" value="' + next + '">' +
+                '<div class="right"><button type="button" class="btn" id="tp-skip">Skip</button><button type="button" class="btn primary" id="tp-next-save">Save follow up date</button></div></div>';
+              $("#tp-skip", body).addEventListener("click", function () { $("#tp-box", body).innerHTML = ""; tpOpen.disabled = false; });
+              $("#tp-next-save", body).addEventListener("click", function () {
+                var d = $("#tp-next", body).value;
+                if (!d) { toast("Please pick a date, or click Skip", true); return; }
+                write(db.from("outreach_contacts").update({ next_follow_up: d }).eq("id", c.id), "outreach_contacts", "Follow up set for " + fmtDate(d)).then(function (ok2) {
+                  if (!ok2) return;
+                  c.next_follow_up = d;
+                  refresh();
+                  var nf = $("#f-next_follow_up", body); if (nf) nf.value = d;
+                  $("#tp-box", body).innerHTML = ""; tpOpen.disabled = false;
+                });
+              });
+            });
+          });
+        });
+
+        // Move to Leads (Client type only): adds a lead, keeps the contact here
+        var lead = $("#card-lead", body);
+        if (lead) lead.addEventListener("click", function () {
+          lead.disabled = true;
+          var row = { id: newId(), name: c.name, business: c.organisation || null, instagram: c.instagram || null, email: c.email || null, status: "Lead", source: "Outreach", notes: c.notes || null, last_contact: c.last_contact || today() };
+          write(db.from("contacts").insert(row), "contacts", "Added to your Leads tab").then(function (ok) {
+            if (!ok) { lead.disabled = false; return; }
+            db.from("outreach_contacts").update({ lead_id: row.id }).eq("id", c.id).then(function () { c.lead_id = row.id; refresh(); });
+            lead.outerHTML = '<span class="pill green">Already in Leads</span>';
+          });
+        });
+      }
     });
   }
 
