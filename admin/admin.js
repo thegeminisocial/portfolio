@@ -129,7 +129,7 @@
       return "missing";
     }
     if (code === "PGRST204" || code === "42703" || /column/i.test(msg)) {
-      notice("field-" + table, "<strong>A field is missing in \"" + esc(table) + "\".</strong>&nbsp;" + esc(msg) + ". Run db.sql again in Supabase to add it. The rest keeps working.");
+      notice("field-" + table, "<strong>A field is missing in \"" + esc(table) + "\".</strong>&nbsp;" + esc(msg) + ". Run " + (table === "client_results" && /report_/i.test(msg) ? "sql-results-dates.sql" : "db.sql") + " in Supabase to add it. The rest keeps working.");
       return "field";
     }
     if (/jwt|token|auth/i.test(msg)) {
@@ -956,85 +956,158 @@
     { name: "interactions", label: "Interactions" }, { name: "profile_visits", label: "Profile visits" },
     { name: "link_clicks", label: "Link clicks" }, { name: "enquiries", label: "Enquiries" }
   ];
-  var resState = { client: "", month: shiftMonth(thisMonth(), -1) };
+  // Each report has its own dates: "Report from" and "Report to".
+  // sel: the report being shown (its id), "new" for a new report, "" for the latest one.
+  var resState = { client: "", sel: "", fFrom: "", fTo: "" };
+  function period(x) { return fmtDate(x.report_from) + " to " + fmtDate(x.report_to); }
+  function periodShort(x) { var d = parseDate(x.report_to); return d ? pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + String(d.getFullYear()).slice(2) : ""; }
+  function byReportDate(a, b) { return String(a.report_to).localeCompare(String(b.report_to)) || String(a.report_from).localeCompare(String(b.report_from)); }
+  // The period straight after a report, the same length as it. If a report
+  // runs whole months (e.g. 12/09 to 11/10), the next one does too (12/10 to 11/11);
+  // otherwise it gets the same number of days.
+  function addMonths(d, k) { return new Date(d.getFullYear(), d.getMonth() + k, d.getDate()); }
+  function nextPeriod(x) {
+    var f = parseDate(x.report_from), t = parseDate(x.report_to);
+    if (!f || !t) return null;
+    var from = addDays(t, 1);
+    for (var k = 1; k <= 12; k++) {
+      if (iso(addDays(addMonths(f, k), -1)) === iso(t)) return { report_from: iso(from), report_to: iso(addDays(addMonths(from, k), -1)) };
+    }
+    return { report_from: iso(from), report_to: iso(addDays(from, daysBetween(f, t))) };
+  }
+  function overlaps(a, b) { return a.report_from <= b.report_to && a.report_to >= b.report_from; }
+
   function renderResults(root) {
-    return Promise.all([read("clients"), read("client_results", function (q) { return q.order("month", { ascending: true }); })]).then(function (r) {
+    return Promise.all([read("clients"), read("client_results", function (q) { return q.order("report_to", { ascending: true }); })]).then(function (r) {
       var clients = r[0].rows.slice().sort(function (a, b) { return (isFinished(a) - isFinished(b)) || String(a.name).localeCompare(String(b.name)); });
-      var results = r[1].rows;
-      if (!clients.length) {
-        root.innerHTML = '<div class="card"><p class="empty">Add a client in "Clients and jobs" first, then you can log their monthly numbers here.</p></div>';
+      if (!r[1].ok) {
+        root.innerHTML = '<div class="card"><p class="empty">Your results can\'t load yet. Open Supabase, go to SQL Editor and run <strong>sql-results-dates.sql</strong> (it adds the "Report from" and "Report to" dates), then refresh this page. Your saved results are safe.</p></div>';
         return;
       }
-      if (!resState.client || !clients.some(function (c) { return c.id === resState.client; })) resState.client = clients[0].id;
+      var results = r[1].rows.filter(function (x) { return x.report_from && x.report_to; });
+      if (!clients.length) {
+        root.innerHTML = '<div class="card"><p class="empty">Add a client in "Clients and jobs" first, then you can log their report numbers here.</p></div>';
+        return;
+      }
+      if (!resState.client || !clients.some(function (c) { return c.id === resState.client; })) { resState.client = clients[0].id; resState.sel = ""; }
       var client = clients.filter(function (c) { return c.id === resState.client; })[0];
-      var lastMonth = shiftMonth(thisMonth(), -1);
-      var missingLast = clients.filter(function (c) {
-        return !isFinished(c) && !c.is_example && !results.some(function (x) { return x.client_id === c.id && monthOf(x.month) === lastMonth; });
-      });
-      var mine = results.filter(function (x) { return x.client_id === client.id; }).sort(function (a, b) { return String(a.month).localeCompare(String(b.month)); });
-      var byMonth = {}; mine.forEach(function (x) { byMonth[monthOf(x.month)] = x; });
-      var row = byMonth[resState.month] || null;
-      var prev = byMonth[shiftMonth(resState.month, -1)] || null;
+      var mine = results.filter(function (x) { return x.client_id === client.id; }).sort(byReportDate);   // oldest first
+      var latest = mine.length ? mine[mine.length - 1] : null;
+      if (resState.sel !== "new" && !mine.some(function (x) { return x.id === resState.sel; })) resState.sel = latest ? latest.id : "new";
+      var row = resState.sel === "new" ? null : mine.filter(function (x) { return x.id === resState.sel; })[0];
+      var prevOf = function (x) { var i = mine.indexOf(x); return i > 0 ? mine[i - 1] : null; };
+      var prev = row ? prevOf(row) : null;
+      var start = row ? { report_from: row.report_from, report_to: row.report_to } : (latest ? nextPeriod(latest) : { report_from: "", report_to: "" });
+
+      // Who has a report ready to log: their next period (same length as the last one) has ended
+      var now = today();
+      var due = clients.filter(function (c) { return !isFinished(c) && !c.is_example; }).map(function (c) {
+        var theirs = results.filter(function (x) { return x.client_id === c.id; }).sort(byReportDate);
+        if (!theirs.length) return esc(c.name) + " (no reports yet)";
+        var nx = nextPeriod(theirs[theirs.length - 1]);
+        return nx && nx.report_to < now ? esc(c.name) + ": report for " + esc(period(nx)) + " is ready to log" : "";
+      }).filter(Boolean);
 
       var html = "";
-      html += missingLast.length
-        ? '<div class="notice"><strong>Still to log for ' + esc(monthLabel(lastMonth)) + ":</strong>&nbsp;" + missingLast.map(function (c) { return esc(c.name); }).join(", ") + "</div>"
-        : '<div class="notice info">All active clients have their ' + esc(monthLabel(lastMonth)) + " numbers logged.</div>";
+      html += due.length
+        ? '<div class="notice"><strong>Ready to log:</strong>&nbsp;' + due.join("; ") + "</div>"
+        : '<div class="notice info">All active clients are up to date with their reports.</div>';
       html += '<div class="toolbar"><select id="res-client" aria-label="Client">' + clients.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === client.id ? " selected" : "") + ">" + esc(c.name) + (isFinished(c) ? " (finished)" : "") + "</option>"; }).join("") + "</select>" +
-        '<input type="month" id="res-month" value="' + esc(resState.month.slice(0, 7)) + '" aria-label="Month">' +
+        '<select id="res-report" aria-label="Report"><option value="new"' + (row ? "" : " selected") + ">New report</option>" + mine.slice().reverse().map(function (x) { return '<option value="' + esc(x.id) + '"' + (row && x.id === row.id ? " selected" : "") + ">" + esc(period(x)) + "</option>"; }).join("") + "</select>" +
+        '<button type="button" class="btn" id="res-new">' + ICON.plus + "Add new report</button>" +
         '<div class="grow"></div><button type="button" class="btn" id="res-copy"' + (row ? "" : " disabled") + ">" + ICON.copy + 'Copy report summary</button><button type="button" class="btn" id="res-csv"' + (row ? "" : " disabled") + ">" + ICON.download + "Download for Canva</button></div>";
       var vals = row || {};
-      html += '<div class="card inline-form"><div class="card-head"><h2>' + esc(client.name) + ", " + esc(monthLabel(resState.month)) + (row ? exPill(row) : ' <span class="muted">(not logged yet)</span>') + '</h2></div><form id="res-form" class="form-grid" novalidate>' +
+      html += '<div class="card inline-form"><div class="card-head"><h2>' + esc(client.name) + ", " + (row ? esc(period(row)) + exPill(row) : 'new report <span class="muted">(not saved yet)</span>') + '</h2></div><form id="res-form" class="form-grid" novalidate>' +
+        '<div class="field"><label for="r-from">Report from</label><input id="r-from" name="report_from" type="date" value="' + esc(start.report_from || "") + '"></div>' +
+        '<div class="field"><label for="r-to">Report to</label><input id="r-to" name="report_to" type="date" value="' + esc(start.report_to || "") + '"></div>' +
+        '<div class="field full" id="res-date-msgs"></div>' +
         RESULT_FIELDS.map(function (f) {
           var c = prev ? change(vals[f.name], prev[f.name]) : null;
           return '<div class="field"><label for="r-' + f.name + '">' + f.label + (row && c ? " " + changeHTML(c) : "") + '</label><input id="r-' + f.name + '" name="' + f.name + '" type="number" min="0" step="1" value="' + esc(row ? n(vals[f.name]) : "") + '" placeholder="0"></div>';
         }).join("") +
         '<div class="field"><label for="r-top">Top post link</label><input id="r-top" name="top_post_link" type="url" value="' + esc(vals.top_post_link) + '" placeholder="https://..."></div>' +
         '<div class="field full"><label for="r-notes">Notes</label><textarea id="r-notes" name="notes">' + esc(vals.notes) + "</textarea></div></form>" +
-        '<div class="form-actions">' + (row ? '<button type="button" class="btn danger" id="res-del">Delete this month</button>' : "") + '<div class="right"><button type="button" class="btn primary" id="res-save">Save numbers</button></div></div></div>';
+        (row && prev ? '<p class="muted" style="margin:10px 0 0">Changes are compared with the previous report, ' + esc(period(prev)) + ".</p>" : "") +
+        '<div class="form-actions">' + (row ? '<button type="button" class="btn danger" id="res-del">Delete this report</button>' : "") + '<div class="right"><button type="button" class="btn primary" id="res-save">Save numbers</button></div></div></div>';
 
-      // History table and charts
-      html += '<div class="grid-2"><div class="card"><h2>Followers</h2>' + lineChart(mine.map(function (x) { return monthShort(x.month); }), mine.map(function (x) { return x.followers; }), { label: "Followers over time", empty: "Once two or more months are logged for " + client.name + ", their followers will show here as a line." }) +
-        '</div><div class="card"><h2>Reach</h2>' + lineChart(mine.map(function (x) { return monthShort(x.month); }), mine.map(function (x) { return x.reach; }), { color: "#DF982E", label: "Reach over time", empty: "Once two or more months are logged, reach over time will show here." }) + "</div></div>";
-      html += '<div class="card"><h2>All months for ' + esc(client.name) + "</h2>" + (mine.length ? '<div class="table-wrap" style="box-shadow:none"><table><thead><tr><th>Month</th>' + RESULT_FIELDS.map(function (f) { return "<th>" + f.label + "</th>"; }).join("") + "</tr></thead><tbody>" +
-        mine.slice().reverse().map(function (x) {
-          var p = byMonth[shiftMonth(monthOf(x.month), -1)];
-          return '<tr class="clickable" data-month="' + monthOf(x.month) + '"><td class="nowrap">' + esc(monthLabel(x.month)) + exPill(x) + "</td>" + RESULT_FIELDS.map(function (f) {
-            return '<td class="nowrap">' + fmtNum(x[f.name]) + (p ? changeHTML(change(x[f.name], p[f.name])) : "") + "</td>";
-          }).join("") + "</tr>";
-        }).join("") + "</tbody></table></div>" : '<p class="empty">No months logged yet for ' + esc(client.name) + ". Fill in the form above and click \"Save numbers\".</p>") + "</div>";
+      // Charts, oldest to newest, labelled by the date each report ends
+      html += '<div class="grid-2"><div class="card"><h2>Followers</h2>' + lineChart(mine.map(periodShort), mine.map(function (x) { return x.followers; }), { label: "Followers over time", empty: "Once two or more reports are logged for " + client.name + ", their followers will show here as a line." }) +
+        '</div><div class="card"><h2>Reach</h2>' + lineChart(mine.map(periodShort), mine.map(function (x) { return x.reach; }), { color: "#DF982E", label: "Reach over time", empty: "Once two or more reports are logged, reach over time will show here." }) + "</div></div>";
+
+      // History, newest first, with a simple date range filter
+      var shown = mine.slice().reverse().filter(function (x) {
+        return (!resState.fFrom || x.report_to >= resState.fFrom) && (!resState.fTo || x.report_from <= resState.fTo);
+      });
+      html += '<div class="card"><div class="card-head"><h2>All reports for ' + esc(client.name) + "</h2></div>" +
+        (mine.length ? '<div class="toolbar"><label class="muted" for="res-f-from">From</label><input type="date" id="res-f-from" value="' + esc(resState.fFrom) + '"><label class="muted" for="res-f-to">To</label><input type="date" id="res-f-to" value="' + esc(resState.fTo) + '"><button type="button" class="btn" id="res-f-clear"' + (resState.fFrom || resState.fTo ? "" : " disabled") + ">Clear</button></div>" : "") +
+        (shown.length ? '<div class="table-wrap" style="box-shadow:none"><table><thead><tr><th>Period</th>' + RESULT_FIELDS.map(function (f) { return "<th>" + f.label + "</th>"; }).join("") + "</tr></thead><tbody>" +
+          shown.map(function (x) {
+            var p = prevOf(x);
+            return '<tr class="clickable" data-report="' + esc(x.id) + '"><td class="nowrap">' + esc(period(x)) + exPill(x) + "</td>" + RESULT_FIELDS.map(function (f) {
+              return '<td class="nowrap">' + fmtNum(x[f.name]) + (p ? changeHTML(change(x[f.name], p[f.name])) : "") + "</td>";
+            }).join("") + "</tr>";
+          }).join("") + "</tbody></table></div>"
+          : '<p class="empty">' + (mine.length ? "No reports in these dates. Click \"Clear\" to see them all." : "No reports logged yet for " + esc(client.name) + ". Fill in the form above and click \"Save numbers\".") + "</p>") + "</div>";
       root.innerHTML = html;
 
-      $("#res-client", root).addEventListener("change", function (e) { resState.client = e.target.value; refresh(); });
-      $("#res-month", root).addEventListener("change", function (e) { if (e.target.value) { resState.month = e.target.value + "-01"; refresh(); } });
+      // Date checks: shown as you type, checked again when you save
+      var form = $("#res-form", root);
+      function dateCheck() {
+        var from = form.elements.report_from.value, to = form.elements.report_to.value, out = { ok: true, html: "" };
+        if (from && to && to < from) {
+          out.ok = false;
+          out.html = '<div class="notice error" role="alert">"Report to" can\'t be before "Report from". Please check the dates.</div>';
+        } else if (from && to) {
+          var clash = mine.filter(function (x) { return (!row || x.id !== row.id) && overlaps({ report_from: from, report_to: to }, x); });
+          if (clash.length) out.html = '<div class="notice">Heads up: these dates overlap with ' + clash.map(function (x) { return esc(period(x)); }).join(" and ") + ". You can still save.</div>";
+        }
+        $("#res-date-msgs", root).innerHTML = out.html;
+        return out;
+      }
+      dateCheck();
+      form.elements.report_from.addEventListener("change", dateCheck);
+      form.elements.report_to.addEventListener("change", dateCheck);
+
+      $("#res-client", root).addEventListener("change", function (e) { resState.client = e.target.value; resState.sel = ""; refresh(); });
+      $("#res-report", root).addEventListener("change", function (e) { resState.sel = e.target.value; refresh(); });
+      $("#res-new", root).addEventListener("click", function () { resState.sel = "new"; refresh(); });
+      var fFrom = $("#res-f-from", root), fTo = $("#res-f-to", root), fClear = $("#res-f-clear", root);
+      if (fFrom) fFrom.addEventListener("change", function (e) { resState.fFrom = e.target.value; refresh(); });
+      if (fTo) fTo.addEventListener("change", function (e) { resState.fTo = e.target.value; refresh(); });
+      if (fClear) fClear.addEventListener("click", function () { resState.fFrom = ""; resState.fTo = ""; refresh(); });
       root.addEventListener("click", function (e) {
-        var tr = e.target.closest("tr[data-month]");
-        if (tr) { resState.month = tr.dataset.month; refresh(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+        var tr = e.target.closest("tr[data-report]");
+        if (tr) { resState.sel = tr.dataset.report; refresh(); window.scrollTo({ top: 0, behavior: "smooth" }); }
       });
       $("#res-save", root).addEventListener("click", function () {
-        var f = $("#res-form", root), v = { client_id: client.id, month: resState.month };
-        RESULT_FIELDS.forEach(function (x) { v[x.name] = Math.max(0, Math.round(n(f.elements[x.name].value))); });
-        v.top_post_link = f.elements.top_post_link.value.trim() || null;
-        v.notes = f.elements.notes.value.trim() || null;
-        write(db.from("client_results").upsert(v, { onConflict: "client_id,month" }), "client_results", "Numbers saved").then(function (ok) { if (ok) refresh(); });
+        var v = { client_id: client.id, report_from: form.elements.report_from.value, report_to: form.elements.report_to.value };
+        if (!v.report_from || !v.report_to) { toast("Please choose both dates, \"Report from\" and \"Report to\".", true); return; }
+        if (!dateCheck().ok) { toast("\"Report to\" can't be before \"Report from\".", true); return; }
+        RESULT_FIELDS.forEach(function (x) { v[x.name] = Math.max(0, Math.round(n(form.elements[x.name].value))); });
+        v.top_post_link = form.elements.top_post_link.value.trim() || null;
+        v.notes = form.elements.notes.value.trim() || null;
+        var q = row
+          ? db.from("client_results").update(v).eq("id", row.id).select("id")
+          : db.from("client_results").insert(v).select("id");
+        write(Promise.resolve(q).then(function (res) { if (!res.error && res.data && res.data[0]) resState.sel = res.data[0].id; return res; }), "client_results", "Numbers saved").then(function (ok) { if (ok) refresh(); });
       });
       var del = $("#res-del", root);
       if (del) del.addEventListener("click", function () {
         if (!del.classList.contains("confirm")) { del.classList.add("confirm"); del.textContent = "Click again to delete"; return; }
-        write(db.from("client_results").delete().eq("id", row.id), "client_results", "Month deleted").then(function (ok) { if (ok) refresh(); });
+        write(db.from("client_results").delete().eq("id", row.id), "client_results", "Report deleted").then(function (ok) { if (ok) { resState.sel = ""; refresh(); } });
       });
       function compareLine(label, cur, p) {
         var c = p ? change(cur, p) : null;
         var txt = label + ": " + fmtNum(cur);
-        if (c) txt += c.diff === 0 ? " (no change on " + monthLabel(shiftMonth(resState.month, -1)) + ")" : " (" + (c.diff > 0 ? "up " : "down ") + fmtNum(Math.abs(c.diff)) + (c.pct !== null ? ", " + (c.diff > 0 ? "+" : "-") + Math.abs(c.pct).toFixed(1) + "%" : "") + " on " + monthLabel(shiftMonth(resState.month, -1)) + ")";
+        if (c) txt += c.diff === 0 ? " (no change on the previous report)" : " (" + (c.diff > 0 ? "up " : "down ") + fmtNum(Math.abs(c.diff)) + (c.pct !== null ? ", " + (c.diff > 0 ? "+" : "-") + Math.abs(c.pct).toFixed(1) + "%" : "") + " on the previous report)";
         return txt;
       }
       var copyBtn = $("#res-copy", root);
       if (copyBtn) copyBtn.addEventListener("click", function () {
         if (!row) return;
-        var lines = ["Monthly report", "Client: " + client.name, "Month: " + monthLabel(resState.month), ""];
+        var lines = ["Social media report", "Client: " + client.name, "Period: " + period(row), ""];
         RESULT_FIELDS.forEach(function (f) { lines.push(compareLine(f.label, row[f.name], prev ? prev[f.name] : null)); });
-        if (!prev) lines.push("", "(No numbers logged for " + monthLabel(shiftMonth(resState.month, -1)) + " to compare with.)");
+        lines.push("", prev ? "Compared with the previous report: " + period(prev) : "(No earlier report to compare with.)");
         if (row.top_post_link) lines.push("", "Top post: " + row.top_post_link);
         if (row.notes) lines.push("", "Notes: " + row.notes);
         copyText(lines.join("\n")).then(function (ok) { toast(ok ? "Summary copied, paste it into Canva" : "Couldn't copy, please try again", !ok); });
@@ -1042,16 +1115,16 @@
       var csvBtn = $("#res-csv", root);
       if (csvBtn) csvBtn.addEventListener("click", function () {
         if (!row) return;
-        var headers = ["Client", "Month"], vals2 = [client.name, monthLabel(resState.month)];
+        var headers = ["Client", "Report from", "Report to"], vals2 = [client.name, fmtDate(row.report_from), fmtDate(row.report_to)];
         RESULT_FIELDS.forEach(function (f) {
           var c = prev ? change(row[f.name], prev[f.name]) : null;
           headers.push(f.label, f.label + " change", f.label + " change %");
           vals2.push(n(row[f.name]), c ? (c.diff > 0 ? "+" : c.diff < 0 ? "-" : "") + fmtNum(Math.abs(c.diff)) : "", c && c.pct !== null ? (c.diff > 0 ? "+" : c.diff < 0 ? "-" : "") + Math.abs(c.pct).toFixed(1) + "%" : "");
         });
         headers.push("Top post link", "Notes", "Compared with");
-        vals2.push(row.top_post_link || "", row.notes || "", prev ? monthLabel(shiftMonth(resState.month, -1)) : "");
+        vals2.push(row.top_post_link || "", row.notes || "", prev ? period(prev) : "");
         var slug = String(client.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        downloadCSV("canva-report-" + slug + "-" + resState.month.slice(0, 7) + ".csv", headers, [vals2]);
+        downloadCSV("canva-report-" + slug + "-" + row.report_from + "-to-" + row.report_to + ".csv", headers, [vals2]);
       });
     });
   }
