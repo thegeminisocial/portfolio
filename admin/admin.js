@@ -32,16 +32,28 @@
   // Dates: always shown as DD/MM/YYYY, stored as YYYY-MM-DD
   function pad(x) { return String(x).padStart(2, "0"); }
   function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-  function todayDate() { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  // "Today" and every date worked out from an exact time always use Queensland time
+  // (Australia/Brisbane, no daylight saving), whatever time zone the device is set to.
+  var TIME_ZONE = "Australia/Brisbane";
+  var tzDay = null;
+  try { tzDay = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }); } catch (e) { tzDay = null; }
+  function qldDay(t) {   // the Queensland day (YYYY-MM-DD) of an exact time
+    var d = t instanceof Date ? t : new Date(t);
+    if (isNaN(d)) return "";
+    if (tzDay) { var p = {}; tzDay.formatToParts(d).forEach(function (x) { p[x.type] = x.value; }); return p.year + "-" + p.month + "-" + p.day; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function todayDate() { var m = qldDay(new Date()).split("-"); return new Date(+m[0], +m[1] - 1, +m[2]); }
   function today() { return iso(todayDate()); }
   function parseDate(s) {
     if (!s) return null;
     s = String(s);
     var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
-    var d = new Date(s);
-    if (isNaN(d)) return null;
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var day = qldDay(s);   // an exact time, like created_at: use its Queensland day
+    if (!day) return null;
+    var p = day.split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
   }
   function fmtDate(s) { var d = parseDate(s); return d ? pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() : ""; }
   function addDays(d, k) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + k); }
@@ -421,10 +433,13 @@
      1. PORTFOLIO
      ================================================================= */
   function renderPortfolio(root) {
+    // Visits are grouped by their Queensland day, worked out from the exact time
+    // they happened (created_at). "visited_on" is stamped in UTC, so it isn't used.
     var since = iso(addDays(todayDate(), -13));
+    var sinceTime = new Date(since + "T00:00:00+10:00").toISOString();   // midnight in Queensland
     return Promise.all([
       read("portfolio_items", function (q) { return q.order("position", { ascending: true }).order("created_at", { ascending: true }); }),
-      readAll("visits", function (q) { return q.gte("visited_on", since); })
+      readAll("visits", function (q) { return q.gte("created_at", sinceTime); })
     ]).then(function (r) {
       var items = r[0].rows, visits = r[1].rows;
       var days = [], counts = [];
@@ -432,8 +447,9 @@
       var labels = days.map(function (d) { return d.slice(8, 10) + "/" + d.slice(5, 7); });
       var sources = {};
       visits.forEach(function (v) {
-        var idx = days.indexOf(String(v.visited_on).slice(0, 10));
-        if (idx > -1) counts[idx]++;
+        var idx = days.indexOf(qldDay(v.created_at));
+        if (idx < 0) return;
+        counts[idx]++;
         var s = v.source || "Direct";
         if (s !== "Internal") sources[s] = (sources[s] || 0) + 1;
       });
