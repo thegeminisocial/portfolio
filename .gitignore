@@ -1,0 +1,4 @@
+# Files that must never go to GitHub (they stay on Marina's computer only).
+# sql-menu.sql holds the private price list.
+sql-menu.sql
+.DS_Store
