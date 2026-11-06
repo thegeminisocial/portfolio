@@ -4,7 +4,7 @@
    Each tab is drawn by its own function further down (renderPortfolio,
    renderLeads, renderClients, renderCalendar, renderResults,
    renderChecklists, renderNumbers, renderScripts, renderSeo,
-   renderOutreach).
+   renderOutreach, renderMenu).
    If a table is missing, that tab says so and everything else carries on.
    ===================================================================== */
 (function () {
@@ -137,7 +137,7 @@
     var code = (error && error.code) || "";
     var msg = (error && error.message) || "";
     if (code === "PGRST205" || code === "42P01" || /could not find the table/i.test(msg) || (/relation/i.test(msg) && /does not exist/i.test(msg))) {
-      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : table === "seo_keywords" ? "sql-seo.sql" : /^outreach_/.test(table) ? "sql-outreach.sql" : "db.sql") + " to create it. Everything else keeps working.");
+      notice("missing-" + table, "<strong>The \"" + esc(table) + "\" table is missing.</strong>&nbsp;This part can't show its data until it exists. Open Supabase, go to SQL Editor and run " + (table === "scripts" || table === "settings" ? "sql-scripts.sql" : table === "seo_keywords" ? "sql-seo.sql" : /^outreach_/.test(table) ? "sql-outreach.sql" : /^menu_/.test(table) ? "sql-menu.sql" : "db.sql") + " to create it. Everything else keeps working.");
       return "missing";
     }
     if (code === "PGRST204" || code === "42703" || /column/i.test(msg)) {
@@ -396,7 +396,8 @@
     checklists: { title: "Checklists", render: renderChecklists },
     numbers: { title: "My numbers", render: renderNumbers },
     outreach: { title: "Outreach", render: renderOutreach },
-    scripts: { title: "Scripts", render: renderScripts }
+    scripts: { title: "Scripts", render: renderScripts },
+    menu: { title: "Menu", render: renderMenu }
   };
   var current = "portfolio";
   var renderId = 0;
@@ -2626,6 +2627,435 @@
           });
         });
       }
+    });
+  }
+
+  /* =================================================================
+     11. MENU (your private à la carte price list and quick quotes)
+     No prices are written in this file. They live only in Supabase, in
+     the tables "menu_services" and "menu_quotes" (created by
+     sql-menu.sql, which stays on your computer), locked so only you,
+     signed in, can read them. "Prices last reviewed" is kept in
+     "settings" under "menu_reviewed_on".
+     ================================================================= */
+  var MENU_SECTIONS = ["Strategy and Planning", "Content Creation", "Email Marketing and Funnels", "Reporting and Custom Work"];
+  var QUOTE_STATUS = ["Sent", "Accepted", "Declined"];
+  var QUOTE_COLOUR = { "Sent": "navy", "Accepted": "green", "Declined": "" };
+  var MENU_REVIEW_KEY = "menu_reviewed_on";
+  var MENU_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  var menuState = {
+    q: "", clientView: false, showHidden: false, open: {},
+    // The quote you are building: items are { id, qty, extra }
+    quote: { items: [], existing: false, discType: "%", discValue: "", note: "", name: "", link: "" }
+  };
+  // Whole dollars, no cents
+  var DOLLARS = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  function dollars(v) { return DOLLARS.format(Math.round(n(v))); }
+  function hasExtra(s) { return !!(s && s.extra_unit && s.extra_price !== null && s.extra_price !== undefined); }
+
+  // Works out every line, the subtotal, the discount and the total
+  function quoteCalc(items, byId, existing, discType, discValue) {
+    var lines = [];
+    items.forEach(function (it) {
+      var s = byId[it.id];
+      if (!s) return;
+      var qty = Math.max(0, Math.round(n(it.qty)));
+      if (!qty) return;
+      var extra = hasExtra(s) ? Math.max(0, Math.round(n(it.extra))) : 0;
+      var price = existing ? n(s.client_price) : n(s.standard_price);
+      var line = { service_id: s.id, name: s.name, unit: s.unit || "", qty: qty, unit_price: price,
+        extra_qty: extra, extra_unit: extra ? s.extra_unit : "", extra_price: extra ? n(s.extra_price) : 0 };
+      line.total = qty * price + extra * line.extra_price;
+      lines.push(line);
+    });
+    var subtotal = lines.reduce(function (a, l) { return a + l.total; }, 0);
+    var dv = Math.max(0, n(discValue));
+    var discount = discType === "%" ? Math.round(subtotal * Math.min(dv, 100) / 100) : Math.min(Math.round(dv), subtotal);
+    return { lines: lines, subtotal: subtotal, discount: discount, total: subtotal - discount };
+  }
+
+  // The plain text quote you paste into an email, WhatsApp or Instagram
+  function quoteText(name, calc, discType, discValue, existing, note) {
+    var out = [];
+    out.push("Hi " + ((name || "").trim() || "there") + ",");
+    out.push("");
+    out.push("Thank you so much for your interest in working together! Here's your quote from The Gemini Social:");
+    out.push("");
+    calc.lines.forEach(function (l) {
+      out.push("- " + l.name + (l.unit ? " (" + l.unit + ")" : "") + (l.qty > 1 ? " x " + l.qty : "") + ": " + dollars(l.qty * l.unit_price));
+      if (l.extra_qty) out.push("  plus " + l.extra_qty + " x " + l.extra_unit + ": " + dollars(l.extra_qty * l.extra_price));
+    });
+    out.push("");
+    if (calc.discount) {
+      out.push("Subtotal: " + dollars(calc.subtotal));
+      out.push("Discount" + (discType === "%" ? " (" + n(discValue) + "%)" : "") + ": -" + dollars(calc.discount));
+    }
+    out.push("Total: " + dollars(calc.total));
+    if (existing) { out.push(""); out.push("As an existing client, you get my client rate on everything above."); }
+    if (note && String(note).trim()) { out.push(""); out.push(String(note).trim()); }
+    out.push("");
+    out.push("Prices in AUD. Happy to tweak anything to fit what you need.");
+    return out.join("\n");
+  }
+  function addMonthsTo(d, k) { return new Date(d.getFullYear(), d.getMonth() + k, d.getDate()); }
+
+  function renderMenu(root) {
+    return Promise.all([
+      read("menu_services", function (q) { return q.order("sort_order", { ascending: true }); }),
+      read("menu_quotes", function (q) { return q.order("quote_date", { ascending: false }).order("created_at", { ascending: false }); }),
+      read("settings", function (q) { return q.eq("key", MENU_REVIEW_KEY); }),
+      read("contacts", function (q) { return q.order("name", { ascending: true }); }),
+      read("clients", function (q) { return q.order("name", { ascending: true }); })
+    ]).then(function (r) {
+      if (!r[0].ok) {
+        root.innerHTML = '<div class="card"><p class="empty">Your price list is kept privately in Supabase. Once the "menu_services" table exists (run sql-menu.sql, see the note above), your services will show here.</p></div>';
+        return;
+      }
+      var services = r[0].rows.slice().sort(function (a, b) {
+        return (n(a.sort_order) - n(b.sort_order)) || String(a.name || "").localeCompare(String(b.name || ""), "en-AU");
+      });
+      var quotes = r[1].rows, quotesOk = r[1].ok;
+      var reviewed = r[2].rows[0] ? r[2].rows[0].value : null;
+      var leads = r[3].rows, clientsList = r[4].rows;
+      var Q = menuState.quote;
+
+      var byId = {}; services.forEach(function (s) { byId[s.id] = s; });
+      var visible = services.filter(function (s) { return !s.hidden; });
+      var quotable = {}; visible.forEach(function (s) { quotable[s.id] = s; });
+      // Drop anything from the quote that was hidden or deleted
+      Q.items = Q.items.filter(function (it) { return quotable[it.id]; });
+      var hiddenCount = services.length - visible.length;
+      if (!hiddenCount) menuState.showHidden = false;
+
+      // Your Custom Project Rate, taken from its own row (never typed in here)
+      var rateRow = services.filter(function (s) { return s.is_project_rate; })[0] ||
+        services.filter(function (s) { return /custom project rate/i.test(s.name || ""); })[0] || null;
+      var hourRate = rateRow ? n(rateRow.standard_price) : 0;
+      function perHour(s) {
+        if (!(n(s.hours) > 0)) return null;
+        return n(s.standard_price) / n(s.hours);
+      }
+
+      // Link a quote to a lead or a client
+      var linkOptions = [{ value: "", label: "Not linked" }]
+        .concat(clientsList.map(function (c) { return { value: "client:" + c.id, label: "Client: " + (c.name || "(no name)") }; }))
+        .concat(leads.map(function (c) { return { value: "lead:" + c.id, label: "Lead: " + (c.name || "(no name)") + (c.business ? " (" + c.business + ")" : "") }; }));
+      var leadById = {}; leads.forEach(function (c) { leadById[c.id] = c; });
+      var clientById = {}; clientsList.forEach(function (c) { clientById[c.id] = c; });
+      function linkOf(row) { return row.client_id ? "client:" + row.client_id : row.lead_id ? "lead:" + row.lead_id : ""; }
+      function linkLabel(row) {
+        if (row.client_id && clientById[row.client_id]) return "Client: " + clientById[row.client_id].name;
+        if (row.lead_id && leadById[row.lead_id]) return "Lead: " + leadById[row.lead_id].name;
+        return "";
+      }
+      function splitLink(v) {
+        var out = { lead_id: null, client_id: null };
+        if (v && v.indexOf("client:") === 0) out.client_id = v.slice(7);
+        if (v && v.indexOf("lead:") === 0) out.lead_id = v.slice(5);
+        return out;
+      }
+
+      // Prices last reviewed, with a gentle reminder after 6 months
+      var revDate = parseDate(reviewed);
+      var stale = !revDate || addMonthsTo(revDate, 6) < todayDate();
+
+      var mStart = parseDate(thisMonth());
+      var quotesThisMonth = quotes.filter(function (x) { var d = parseDate(x.quote_date); return d && d >= mStart; }).length;
+      var accepted = quotes.filter(function (x) { return x.status === "Accepted"; });
+
+      var html = '<div class="notice info">Existing clients get the client rate. Prices are a planning guide, final quotes can flex for scope, timelines or bundling with a package.</div>';
+      if (stale) html += '<div class="notice">' + (revDate ? "<strong>It's been more than 6 months since you last reviewed your prices.</strong>&nbsp;When you have a quiet moment, have a look through and update anything that's changed." : "<strong>Your prices haven't been marked as reviewed yet.</strong>&nbsp;Have a look through, then click \"Mark as reviewed today\".") + "</div>";
+      html += '<div class="menu-review"><span>Prices last reviewed: <strong>' + (revDate ? esc(fmtDate(reviewed)) : "not yet") + '</strong></span><button type="button" class="btn" id="menu-reviewed">' + ICON.refresh + "Mark as reviewed today</button></div>";
+      html += '<div class="strip">' +
+        stat("Services on your menu", fmtNum(visible.length), hiddenCount ? plural(hiddenCount, "hidden service") : "") +
+        stat("Custom Project Rate", rateRow ? dollars(hourRate) + " an hour" : "Not set", rateRow ? "Client rate " + dollars(rateRow.client_price) : "Edit a service and tick \"Custom Project Rate\"") +
+        stat("Quotes this month", fmtNum(quotesThisMonth)) +
+        stat("Accepted quotes", fmtNum(accepted.length), accepted.length ? dollars(accepted.reduce(function (a, x) { return a + n(x.total); }, 0)) + " in total" : "") +
+        "</div>";
+      html += '<div class="toolbar"><div class="grow"><input type="search" id="menu-q" placeholder="Search services" value="' + esc(menuState.q) + '" aria-label="Search services"></div>' +
+        '<label class="switch"><input type="checkbox" id="menu-client"' + (menuState.clientView ? " checked" : "") + '><span class="track" aria-hidden="true"></span>Show client prices</label>' +
+        (hiddenCount ? '<label class="switch"><input type="checkbox" id="menu-hidden"' + (menuState.showHidden ? " checked" : "") + '><span class="track" aria-hidden="true"></span>Show hidden (' + hiddenCount + ")</label>" : "") +
+        '<button type="button" class="btn primary" id="menu-add">' + ICON.plus + "Add service</button></div>";
+      html += '<div id="menu-list"></div>';
+
+      // Quick quote
+      html += '<div class="card quote-card" id="quote-card"><div class="card-head"><h2>Quick quote</h2>' +
+        '<button type="button" class="btn" id="q-clear">Clear quote</button></div>' +
+        '<p class="muted q-help">Tick services in the list above, or add them here, then set how many of each.</p>' +
+        '<div class="toolbar"><div class="grow"><select id="q-pick" aria-label="Add a service to the quote"><option value="">Add a service...</option>' +
+        MENU_SECTIONS.map(function (sec) {
+          var list = visible.filter(function (s) { return s.section === sec; });
+          return list.length ? '<optgroup label="' + esc(sec) + '">' + list.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + "</option>"; }).join("") + "</optgroup>" : "";
+        }).join("") + "</select></div>" +
+        '<label class="switch"><input type="checkbox" id="q-existing"' + (Q.existing ? " checked" : "") + '><span class="track" aria-hidden="true"></span>Existing client</label></div>' +
+        '<div id="q-lines" class="q-lines"></div>' +
+        '<div class="form-grid q-fields">' +
+          '<div class="field"><label for="q-disc">Discount (optional)</label><div class="q-disc"><input id="q-disc" type="number" min="0" step="1" value="' + esc(Q.discValue) + '" placeholder="0">' +
+            '<div class="seg" role="group" aria-label="Discount type"><button type="button" data-disc="%" aria-pressed="' + (Q.discType === "%") + '">%</button><button type="button" data-disc="$" aria-pressed="' + (Q.discType === "$") + '">$</button></div></div></div>' +
+          '<div class="field"><label for="q-name">Client or business name</label><input id="q-name" type="text" value="' + esc(Q.name) + '" placeholder="e.g. Sunrise Yoga"></div>' +
+          '<div class="field full"><label for="q-note">Short note (optional)</label><input id="q-note" type="text" value="' + esc(Q.note) + '" placeholder="e.g. Includes a free review call after the first month"></div>' +
+          '<div class="field full"><label for="q-link">Link to a lead or client (optional)</label><select id="q-link">' +
+            linkOptions.map(function (o) { return '<option value="' + esc(o.value) + '"' + (Q.link === o.value ? " selected" : "") + ">" + esc(o.label) + "</option>"; }).join("") +
+          "</select></div>" +
+        "</div>" +
+        '<div class="q-totals" id="q-totals"></div>' +
+        '<div class="q-actions"><button type="button" class="btn" id="q-copy">' + ICON.copy + 'Copy quote</button><button type="button" class="btn primary" id="q-save">Save quote</button></div>' +
+        '<details class="q-preview"><summary>Preview the text</summary><pre id="q-text"></pre></details>' +
+        "</div>";
+
+      // Saved quotes
+      html += '<div class="card"><div class="card-head"><h2>Saved quotes</h2></div>' +
+        (quotesOk ? '<div class="table-wrap flat"><table><thead><tr><th>Date</th><th>Name</th><th>Linked to</th><th>Total</th><th>Status</th><th><span class="sr-only">Copy</span></th></tr></thead><tbody id="q-saved">' +
+          (quotes.length ? quotes.map(function (x) {
+            return '<tr class="clickable" data-id="' + esc(x.id) + '"><td class="nowrap">' + esc(fmtDate(x.quote_date)) + "</td><td>" + esc(x.name || "(no name)") + (x.existing_client ? '<span class="tag yellow">client rate</span>' : "") + "</td>" +
+              "<td>" + esc(linkLabel(x)) + '</td><td class="nowrap"><strong>' + esc(dollars(x.total)) + "</strong></td><td>" + pill(x.status, QUOTE_COLOUR[x.status]) + "</td>" +
+              '<td class="nowrap"><button type="button" class="icon-btn" data-act="copy" aria-label="Copy this quote" title="Copy this quote">' + ICON.copy + "</button></td></tr>";
+          }).join("") : '<tr><td colspan="6" class="empty">No saved quotes yet. Build one above and click "Save quote".</td></tr>') +
+          "</tbody></table></div>" : '<p class="empty">Saved quotes will show here once the "menu_quotes" table exists.</p>') +
+        "</div>";
+      root.innerHTML = html;
+
+      /* ---------- The price list ---------- */
+      function drawList() {
+        var q = menuState.q.trim().toLowerCase();
+        var searching = !!q;
+        var picked = {}; Q.items.forEach(function (it) { picked[it.id] = true; });
+        var out = MENU_SECTIONS.map(function (sec) {
+          var inSec = services.filter(function (s) { return s.section === sec; });
+          var list = inSec.filter(function (s) {
+            if (s.hidden && !menuState.showHidden) return false;
+            return !q || [s.name, s.unit, s.included].some(function (v) { return v && String(v).toLowerCase().indexOf(q) > -1; });
+          });
+          if (searching && !list.length) return "";
+          var shown = inSec.filter(function (s) { return !s.hidden; }).length;
+          var hid = inSec.length - shown;
+          var open = searching || menuState.open[sec] !== false;
+          return '<details class="menu-sec" data-sec="' + esc(sec) + '"' + (open ? " open" : "") + '><summary><span>' + esc(sec) + '</span><span class="count">' + plural(shown, "service") + (hid ? ", " + hid + " hidden" : "") + "</span></summary>" +
+            (list.length ? '<div class="table-wrap flat"><table class="menu-table' + (menuState.clientView ? " client-view" : "") + '"><thead><tr><th class="c-pick">Quote</th><th>Service</th><th>Unit</th><th class="num">Standard</th><th class="num">Client</th><th class="num">Per hour</th><th><span class="sr-only">Hide</span></th></tr></thead><tbody>' +
+              list.map(function (s) {
+                var ph = perHour(s);
+                var low = ph !== null && rateRow && s.id !== rateRow.id && ph < hourRate;
+                return '<tr class="clickable' + (s.hidden ? " hidden-item" : "") + '" data-id="' + esc(s.id) + '">' +
+                  '<td class="c-pick keep">' + (s.hidden ? "" : '<input type="checkbox" data-act="pick" aria-label="Add ' + esc(s.name) + ' to the quote"' + (picked[s.id] ? " checked" : "") + ">") + "</td>" +
+                  '<td><div class="svc-name">' + esc(s.name) + (s.hidden ? '<span class="tag grey">hidden</span>' : "") + (s.id === (rateRow && rateRow.id) ? '<span class="tag yellow">your hourly benchmark</span>' : "") + "</div>" +
+                    (s.included ? '<div class="svc-inc">' + esc(s.included) + "</div>" : "") +
+                    (hasExtra(s) ? '<div class="svc-inc"><strong>Add-on:</strong> ' + esc(dollars(s.extra_price)) + " per " + esc(s.extra_unit) + "</div>" : "") + "</td>" +
+                  '<td class="svc-unit">' + esc(s.unit) + "</td>" +
+                  '<td class="num price std">' + esc(dollars(s.standard_price)) + "</td>" +
+                  '<td class="num price cli">' + esc(dollars(s.client_price)) + "</td>" +
+                  '<td class="num nowrap">' + (ph === null ? '<span class="muted">-</span>' : '<span class="rate' + (low ? " low" : "") + '"' + (low ? ' title="Below your Custom Project Rate of ' + esc(dollars(hourRate)) + ' an hour"' : "") + ">" + esc(dollars(ph)) + "/hr</span>" + (low ? '<div class="rate-note">below ' + esc(dollars(hourRate)) + "/hr</div>" : "")) + "</td>" +
+                  '<td class="keep"><button type="button" class="icon-btn' + (s.hidden ? "" : " on eye") + '" data-act="hide" aria-label="' + (s.hidden ? "Show " : "Hide ") + esc(s.name) + '" title="' + (s.hidden ? "Show this service again" : "Hide this service") + '">' + (s.hidden ? ICON.eyeOff : ICON.eye) + "</button></td></tr>";
+              }).join("") + "</tbody></table></div>" : '<p class="empty">No services here yet.</p>') +
+            "</details>";
+        }).join("");
+        if (!services.length) out = '<div class="card"><p class="empty">No services yet. Click "Add service" to add your first one.</p></div>';
+        else if (!out) out = '<div class="card"><p class="empty">No services match your search.</p></div>';
+        $("#menu-list", root).innerHTML = out;
+      }
+      drawList();
+
+      $("#menu-q", root).addEventListener("input", function (e) { menuState.q = e.target.value; drawList(); });
+      $("#menu-client", root).addEventListener("change", function (e) { menuState.clientView = e.target.checked; drawList(); });
+      var hidSwitch = $("#menu-hidden", root);
+      if (hidSwitch) hidSwitch.addEventListener("change", function (e) { menuState.showHidden = e.target.checked; drawList(); });
+      $("#menu-list", root).addEventListener("toggle", function (e) {
+        var d = e.target;
+        if (d.matches && d.matches("details.menu-sec") && !menuState.q.trim()) menuState.open[d.dataset.sec] = d.open;
+      }, true);
+      $("#menu-list", root).addEventListener("click", function (e) {
+        var tr = e.target.closest("tr[data-id]"); if (!tr) return;
+        var s = byId[tr.dataset.id]; if (!s) return;
+        var pick = e.target.closest('[data-act="pick"]');
+        if (pick) { togglePick(s.id, pick.checked); return; }
+        if (e.target.closest(".c-pick")) return;
+        if (e.target.closest('[data-act="hide"]')) {
+          write(db.from("menu_services").update({ hidden: !s.hidden }).eq("id", s.id), "menu_services", s.hidden ? "Service shown again" : "Service hidden").then(function (ok) { if (ok) refresh(); });
+          return;
+        }
+        serviceForm(s);
+      });
+
+      $("#menu-reviewed", root).addEventListener("click", function () {
+        write(db.from("settings").upsert({ key: MENU_REVIEW_KEY, value: today(), updated_at: new Date().toISOString() }, { onConflict: "key" }), "settings", "Marked as reviewed today").then(function (ok) { if (ok) refresh(); });
+      });
+
+      /* ---------- Add or edit a service ---------- */
+      function serviceForm(s) {
+        openForm({
+          title: s ? "Edit service" : "Add service",
+          values: s || { section: MENU_SECTIONS[0], hidden: false, is_project_rate: false },
+          fields: [
+            { name: "name", label: "Service name", required: true, full: true },
+            { name: "section", label: "Section", type: "select", options: MENU_SECTIONS },
+            { name: "unit", label: "Unit", placeholder: "e.g. per reel" },
+            { name: "included", label: "What's included", type: "textarea" },
+            { name: "standard_price", label: "Standard price (AUD)", type: "number", step: "1", required: true },
+            { name: "client_price", label: "Client price (AUD)", type: "number", step: "1", required: true },
+            { name: "hours", label: "Hours it takes me (optional)", type: "number", step: "0.25", nullable: true, help: "Shows your effective hourly rate next to the service" },
+            { name: "sort_order", label: "Position in its section", type: "number", step: "1", nullable: true, help: "Lower numbers show first" },
+            { name: "extra_unit", label: "Add-on block (optional)", placeholder: "e.g. extra 10 minutes over 30", help: "For extras you can add in quotes, like podcast minutes" },
+            { name: "extra_price", label: "Add-on price per block (AUD)", type: "number", step: "1", nullable: true },
+            { name: "is_project_rate", label: "This is my Custom Project Rate (other services are compared with it)", type: "checkbox", full: true },
+            { name: "hidden", label: "Hide this service (it stays saved, but isn't shown in the list or in quotes)", type: "checkbox", full: true }
+          ],
+          onSave: function (v) {
+            v.standard_price = Math.round(n(v.standard_price));
+            v.client_price = Math.round(n(v.client_price));
+            if (v.extra_price !== null) v.extra_price = Math.round(n(v.extra_price));
+            if (v.hours !== null && !(n(v.hours) > 0)) v.hours = null;
+            if (!v.extra_unit) v.extra_price = null;
+            if (v.client_price > v.standard_price) { $("#form-error").textContent = "The client price is higher than the standard price. Clients get the lower rate, so please check the numbers."; return false; }
+            if (v.sort_order === null) {
+              var same = services.filter(function (x) { return x.section === v.section && (!s || x.id !== s.id); });
+              v.sort_order = s && s.section === v.section ? n(s.sort_order) : same.reduce(function (a, x) { return Math.max(a, n(x.sort_order)); }, 0) + 10;
+            }
+            // Only one service can be your Custom Project Rate
+            var first = v.is_project_rate
+              ? Promise.resolve(db.from("menu_services").update({ is_project_rate: false }).eq("is_project_rate", true).neq("id", s ? s.id : "00000000-0000-0000-0000-000000000000"))
+              : Promise.resolve();
+            return first.then(function () {
+              return s ? write(db.from("menu_services").update(v).eq("id", s.id), "menu_services", "Saved") : write(db.from("menu_services").insert(v), "menu_services", "Service added");
+            });
+          },
+          onDelete: s ? function () { return write(db.from("menu_services").delete().eq("id", s.id), "menu_services", "Deleted"); } : null
+        });
+      }
+      $("#menu-add", root).addEventListener("click", function () { serviceForm(null); });
+
+      /* ---------- Quick quote ---------- */
+      function togglePick(id, on) {
+        var has = Q.items.some(function (it) { return it.id === id; });
+        if (on && !has) Q.items.push({ id: id, qty: 1, extra: 0 });
+        if (!on) Q.items = Q.items.filter(function (it) { return it.id !== id; });
+        drawLines();
+      }
+      function calcNow() { return quoteCalc(Q.items, quotable, Q.existing, Q.discType, Q.discValue); }
+      function drawLines() {
+        var box = $("#q-lines", root);
+        if (!Q.items.length) { box.innerHTML = '<p class="empty">No services in this quote yet.</p>'; update(); return; }
+        box.innerHTML = Q.items.map(function (it) {
+          var s = quotable[it.id];
+          return '<div class="q-line" data-id="' + esc(it.id) + '">' +
+            '<div class="q-name"><strong>' + esc(s.name) + '</strong><span class="muted" data-each></span></div>' +
+            '<label class="q-num">How many<input type="number" min="1" step="1" data-f="qty" value="' + esc(it.qty) + '"></label>' +
+            (hasExtra(s) ? '<label class="q-num">Add-on blocks<input type="number" min="0" step="1" data-f="extra" value="' + esc(it.extra || 0) + '" title="' + esc(s.extra_unit) + '"><span class="muted">' + esc(s.extra_unit) + ", " + esc(dollars(s.extra_price)) + " each</span></label>" : "") +
+            '<strong class="q-line-total" data-total></strong>' +
+            '<button type="button" class="icon-btn" data-act="remove" aria-label="Remove ' + esc(s.name) + ' from the quote">' + MENU_X + "</button></div>";
+        }).join("");
+        update();
+      }
+      function update() {
+        var calc = calcNow();
+        var byLine = {}; calc.lines.forEach(function (l) { byLine[l.service_id] = l; });
+        $$(".q-line", root).forEach(function (row) {
+          var s = quotable[row.dataset.id], l = byLine[row.dataset.id];
+          $("[data-each]", row).textContent = (s.unit ? s.unit + ", " : "") + dollars(Q.existing ? s.client_price : s.standard_price) + " each" + (Q.existing ? " (client rate)" : "");
+          $("[data-total]", row).textContent = dollars(l ? l.total : 0);
+        });
+        $("#q-totals", root).innerHTML = calc.lines.length
+          ? (calc.discount ? '<div><span>Subtotal</span><span>' + esc(dollars(calc.subtotal)) + '</span></div><div><span>Discount' + (Q.discType === "%" ? " (" + esc(n(Q.discValue)) + "%)" : "") + "</span><span>-" + esc(dollars(calc.discount)) + "</span></div>" : "") +
+            '<div class="grand"><span>Total (AUD)</span><span>' + esc(dollars(calc.total)) + "</span></div>"
+          : "";
+        $("#q-text", root).textContent = calc.lines.length ? quoteText(Q.name, calc, Q.discType, Q.discValue, Q.existing, Q.note) : "Add a service to see your quote.";
+        // Keep the ticks in the price list in step
+        var picked = {}; Q.items.forEach(function (it) { picked[it.id] = true; });
+        $$('#menu-list [data-act="pick"]', root).forEach(function (cb) { cb.checked = !!picked[cb.closest("tr").dataset.id]; });
+      }
+      drawLines();
+
+      $("#q-pick", root).addEventListener("change", function (e) {
+        var id = e.target.value; e.target.value = "";
+        if (!id) return;
+        if (Q.items.some(function (it) { return it.id === id; })) { toast("That service is already in the quote"); return; }
+        togglePick(id, true);
+      });
+      $("#q-lines", root).addEventListener("input", function (e) {
+        var f = e.target.dataset.f; if (!f) return;
+        var id = e.target.closest(".q-line").dataset.id;
+        Q.items.forEach(function (it) { if (it.id === id) it[f] = e.target.value; });
+        update();
+      });
+      $("#q-lines", root).addEventListener("click", function (e) {
+        if (!e.target.closest('[data-act="remove"]')) return;
+        togglePick(e.target.closest(".q-line").dataset.id, false);
+      });
+      $("#q-existing", root).addEventListener("change", function (e) { Q.existing = e.target.checked; update(); });
+      $("#q-disc", root).addEventListener("input", function (e) { Q.discValue = e.target.value; update(); });
+      $$("[data-disc]", root).forEach(function (b) {
+        b.addEventListener("click", function () {
+          Q.discType = b.dataset.disc;
+          $$("[data-disc]", root).forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+          update();
+        });
+      });
+      $("#q-name", root).addEventListener("input", function (e) { Q.name = e.target.value; update(); });
+      $("#q-note", root).addEventListener("input", function (e) { Q.note = e.target.value; update(); });
+      $("#q-link", root).addEventListener("change", function (e) {
+        Q.link = e.target.value;
+        // Fill in the name from the lead or client if it's empty
+        if (!Q.name.trim() && Q.link) {
+          var l = splitLink(Q.link);
+          var who = l.client_id ? clientById[l.client_id] : leadById[l.lead_id];
+          if (who) { Q.name = who.business || who.name || ""; $("#q-name", root).value = Q.name; update(); }
+        }
+      });
+      $("#q-clear", root).addEventListener("click", function () {
+        menuState.quote = Q = { items: [], existing: false, discType: "%", discValue: "", note: "", name: "", link: "" };
+        refresh();
+      });
+      $("#q-copy", root).addEventListener("click", function () {
+        var calc = calcNow();
+        if (!calc.lines.length) { toast("Add at least one service first", true); return; }
+        copyText(quoteText(Q.name, calc, Q.discType, Q.discValue, Q.existing, Q.note)).then(function (ok) { toast(ok ? "Quote copied, ready to paste" : "Couldn't copy, please try again", !ok); });
+      });
+      $("#q-save", root).addEventListener("click", function () {
+        var calc = calcNow();
+        if (!calc.lines.length) { toast("Add at least one service first", true); return; }
+        var dv = Math.max(0, n(Q.discValue));
+        var row = {
+          quote_date: today(), name: Q.name.trim() || null, existing_client: !!Q.existing, lines: calc.lines,
+          discount_type: dv > 0 ? Q.discType : null, discount_value: dv > 0 ? dv : null,
+          note: Q.note.trim() || null, subtotal: calc.subtotal, total: calc.total, status: "Sent"
+        };
+        var l = splitLink(Q.link); row.lead_id = l.lead_id; row.client_id = l.client_id;
+        var btn = $("#q-save", root); btn.disabled = true;
+        write(db.from("menu_quotes").insert(row), "menu_quotes", "Quote saved").then(function (ok) { if (ok) refresh(); else btn.disabled = false; });
+      });
+
+      /* ---------- Saved quotes ---------- */
+      var quoteById = {}; quotes.forEach(function (x) { quoteById[x.id] = x; });
+      function savedText(x) {
+        var lines = Array.isArray(x.lines) ? x.lines : [];
+        return quoteText(x.name, { lines: lines, subtotal: n(x.subtotal), discount: n(x.subtotal) - n(x.total), total: n(x.total) }, x.discount_type, x.discount_value, x.existing_client, x.note);
+      }
+      var saved = $("#q-saved", root);
+      if (saved) saved.addEventListener("click", function (e) {
+        var tr = e.target.closest("tr[data-id]"); if (!tr) return;
+        var x = quoteById[tr.dataset.id]; if (!x) return;
+        if (e.target.closest('[data-act="copy"]')) {
+          copyText(savedText(x)).then(function (ok) { toast(ok ? "Quote copied, ready to paste" : "Couldn't copy, please try again", !ok); });
+          return;
+        }
+        var lines = Array.isArray(x.lines) ? x.lines : [];
+        openForm({
+          title: "Saved quote, " + dollars(x.total),
+          values: { name: x.name, quote_date: x.quote_date, status: x.status, link: linkOf(x), note: x.note, summary: lines.map(function (l) { return l.name + (l.qty > 1 ? " x " + l.qty : "") + (l.extra_qty ? " + " + l.extra_qty + " add-on blocks" : "") + ": " + dollars(l.total); }).join("\n") },
+          fields: [
+            { name: "name", label: "Client or business name" },
+            { name: "quote_date", label: "Date", type: "date", required: true },
+            { name: "status", label: "Status", type: "select", options: QUOTE_STATUS },
+            { name: "link", label: "Linked to", type: "select", options: linkOptions },
+            { name: "note", label: "Note", full: true },
+            { name: "summary", label: "What's in this quote (for reference, not editable here)", type: "textarea" }
+          ],
+          onSave: function (v) {
+            var l = splitLink(v.link);
+            return write(db.from("menu_quotes").update({ name: v.name, quote_date: v.quote_date, status: v.status, note: v.note, lead_id: l.lead_id, client_id: l.client_id }).eq("id", x.id), "menu_quotes", "Saved");
+          },
+          onDelete: function () { return write(db.from("menu_quotes").delete().eq("id", x.id), "menu_quotes", "Deleted"); }
+        });
+        var sum = $("#f-summary"); if (sum) sum.readOnly = true;
+      });
     });
   }
 
