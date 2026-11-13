@@ -1772,7 +1772,7 @@
   ];
   var KW_TYPES = ["Local", "Overseas", "AI question"];
   var KW_COLOUR = { "Local": "navy", "Overseas": "purple", "AI question": "teal" };
-  var KW_PAGES = ["Homepage", "Packages", "FAQ", "Content Pillar Builder", "Privacy Policy"];
+  var KW_PAGES = ["Homepage", "Work with me", "FAQ", "Content Pillar Builder", "Privacy Policy"];
   var seoState = { health: null, running: null, open: {} };
 
   // Fetch that gives up after 15 seconds, and never uses an old copy
