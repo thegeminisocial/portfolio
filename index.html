@@ -500,8 +500,8 @@ section { position: relative; }
 /* ---------- Hero ---------- */
 .hero { padding: calc(var(--header-h) + clamp(40px, 7vw, 88px)) 0 clamp(64px, 9vw, 112px); overflow: hidden; }
 .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.12fr .88fr; gap: clamp(40px, 6vw, 80px); align-items: center; }
-.hero-brand { margin: 0 0 24px; line-height: 1; }
-.hero h1.hero-title { font-size: clamp(2.3rem, 4.6vw, 3.5rem); line-height: 1.05; margin: 0 0 12px; max-width: 580px; }
+.hero-brand { margin: 0 0 14px; line-height: 1; }
+.hero h1.hero-title { font-size: clamp(2.3rem, 4.6vw, 3.5rem); line-height: 1.05; margin: 0 0 10px; max-width: 580px; }
 .hero-sub { font-family: var(--serif); font-style: italic; font-size: clamp(1.3rem, 2.2vw, 1.6rem); line-height: 1.25; max-width: 560px; margin: 0 0 14px; }
 .hero-logo { display: block; width: min(100%, 580px); height: auto; aspect-ratio: 1665 / 910; }
 .hero-tagline { display: block; margin-top: 14px; width: min(100%, 580px); text-align: center; font-family: var(--sans); font-size: clamp(.8rem, 1.4vw, .95rem); font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--navy); }
@@ -519,7 +519,8 @@ section { position: relative; }
 .polaroid .ph-caption { left: auto; right: 12px; }
 .polaroid-img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 2px; background: var(--cream-2); }
 .side-photo { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 18px; margin-bottom: 22px; }
-.polaroid-note { margin: 0; padding: 12px 8px 16px; text-align: center; font-family: var(--hand); font-size: 1.6rem; line-height: 1.2; color: var(--navy); }
+.polaroid-note { margin: 0; padding: 12px 8px 16px; text-align: center; font-family: var(--hand); font-size: 1.6rem; line-height: 1.2; color: var(--navy); text-wrap: balance; }
+.about-intro { font-family: var(--serif); font-style: italic; font-size: clamp(1.3rem, 2.2vw, 1.6rem); line-height: 1.25; margin: -12px 0 18px; }
 .stamp { position: absolute; width: 124px; height: 124px; right: -34px; top: -36px; z-index: 4; filter: drop-shadow(0 8px 14px rgba(41, 66, 104, .3)); }
 .stamp .spin { transform-origin: 60px 60px; animation: spin 36s linear infinite; }
 .stamp text { font-family: var(--sans); font-weight: 600; }
@@ -974,15 +975,12 @@ section { position: relative; }
 
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow reveal">Hi, I'm Marina, your social media partner</p>
       <div class="hero-brand reveal d1">
         <!-- LOGO: to change it, replace media/logo.png -->
         <img class="hero-logo" width="1665" height="910" alt="The Gemini Social" src="media/logo.png" fetchpriority="high">
-        <span class="hero-tagline">Social media strategy &amp; content</span>
       </div>
       <h1 id="hero-title" class="hero-title reveal d1">Social media strategy meets creative <em>storytelling</em>.</h1>
-      <p class="hero-sub reveal d2">Thoughtful content for businesses with something worth sharing.</p>
-      <p class="lead reveal d2">I get to know your business, understand your goals and turn your expertise, stories and ideas into social media content that feels like you. Based on the Sunshine Coast, working with businesses across Australia and beyond.</p>
+      <p class="lead reveal d2">I turn your expertise, stories and ideas into social media content that feels like you. Sunshine Coast based, working worldwide.</p>
       <p class="hero-hook reveal d2">A quiet account tells people your business might be quiet too.</p>
       <div class="hero-actions reveal d3">
         <a class="btn btn-gold" href="#" data-link="call">Book a free discovery call <span class="star" aria-hidden="true">&#10022;</span></a>
@@ -994,7 +992,7 @@ section { position: relative; }
       <div class="polaroid">
         <!-- PHOTO: to change it, replace media/marina-hero.jpg (about 1200px tall, .jpg) -->
         <img class="polaroid-img" src="media/marina-hero.jpg" alt="Marina Lira, founder of The Gemini Social, smiling beside a plant" width="800" height="1000" style="object-position: 50% 30%">
-        <p class="polaroid-note">Marina, founder</p>
+        <p class="polaroid-note">Hi, I'm Marina, your social media partner</p>
       </div>
       <!-- Round dashed stamp -->
       <svg class="stamp" viewBox="0 0 120 120" aria-hidden="true">
@@ -1044,6 +1042,7 @@ section { position: relative; }
     <div class="about-copy">
       <p class="eyebrow reveal">A little about me</p>
       <h2 id="about-title" class="reveal d1">Two heads are better than <em>one</em></h2>
+      <p class="about-intro reveal d1">Thoughtful content for businesses with something worth sharing.</p>
       <div class="reveal d2">
         <p>Hi, I'm Marina, founder of The Gemini Social. As a true Gemini, communication is at the heart of everything I do. My background spans social media, radio and podcasting, so telling stories that make people stop and listen comes naturally to me.</p>
         <p>I'm curious, genuinely interested in people and energised by the stories behind the businesses I work with. The Gemini Social was built on one simple belief: social media works best when it feels real.</p>
