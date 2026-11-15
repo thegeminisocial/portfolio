@@ -455,6 +455,8 @@
         if (s !== "Internal") sources[s] = (sources[s] || 0) + 1;
       });
       var total14 = counts.reduce(function (a, b) { return a + b; }, 0);
+      // Visits to the booking page in the same 14 days
+      var book14 = visits.filter(function (v) { return /^\/book(\.html)?\/?$/.test(v.page || "") && days.indexOf(qldDay(v.created_at)) > -1; }).length;
       var todayCount = counts[counts.length - 1];
       var live = items.filter(function (x) { return x.visible && !x.is_example; });
       var niches = {};
@@ -466,6 +468,7 @@
       var html = '<div class="strip">' +
         stat("Visits, last 14 days", fmtNum(total14)) +
         stat("Visits today", fmtNum(todayCount)) +
+        stat("Visits to /book, last 14 days", fmtNum(book14)) +
         stat("Items live on the site", fmtNum(live.length)) +
         stat("Strongest niche", topNiche ? esc(topNiche) : "None yet", topNiche ? plural(niches[topNiche], "live item") : "") +
         stat("Top source", srcKeys[0] ? esc(srcKeys[0]) : "None yet", srcKeys[0] ? plural(sources[srcKeys[0]], "visit") : "") +
